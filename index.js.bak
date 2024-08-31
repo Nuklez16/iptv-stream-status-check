@@ -1,0 +1,211 @@
+require('dotenv').config();
+const mysql = require('mysql');
+const { exec } = require('child_process');
+const fs = require('fs');
+const nodemailer = require('nodemailer');
+
+// MySQL connection configuration
+const connection = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
+});
+
+// Function to check if a stream URL is reachable
+function checkStreamStatus(url) {
+    return new Promise((resolve, reject) => {
+        // Adjust the listen_timeout value as needed
+        const listenTimeoutInSeconds = 40;
+        const ffprobeCommand = `ffprobe -v quiet -print_format json -show_streams -listen_timeout ${listenTimeoutInSeconds} "${url}"`;
+        exec(ffprobeCommand, (error, stdout, stderr) => {
+            if (error) {
+                resolve(false); // Return false if command fails
+                return;
+            }
+            if (stderr) {
+                resolve(false); // Return false if stderr is not empty
+                return;
+            }
+            try {
+                const streams = JSON.parse(stdout).streams;
+                const isOnline = streams && streams.length > 0;
+                resolve(isOnline);
+            } catch (parseError) {
+                resolve(false); // Return false if parsing fails
+            }
+        });
+    });
+}
+
+// Function to update stream status in the database
+function updateStreamStatus(streamId, isOnline) {
+    const status = isOnline ? 'online' : 'offline';
+    const query = `UPDATE streams SET status = '${status}' WHERE id = ${streamId}`;
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error updating stream status:', error.message);
+        } else {
+            console.log(`Stream ${streamId} status updated to ${status}`);
+        }
+    });
+}
+
+// Function to introduce a delay
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function disconnectFromDatabase() {
+    return new Promise((resolve, reject) => {
+        connection.end((error) => {
+            if (error) {
+                console.error('Error disconnecting from database:', error.message);
+                reject(error);
+            } else {
+                console.log('Disconnected from database');
+                resolve();
+            }
+        });
+    });
+}
+
+async function fetchAndCheckStreams() {
+    try {
+        const results = await fetchStreamsFromDatabase();
+        await checkStreamStatusAndUpdate(results);
+    } catch (error) {
+        console.error('Error fetching and checking streams:', error);
+    }
+}
+
+async function fetchStreamsFromDatabase() {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT id, url FROM streams';
+        connection.query(query, (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+}
+
+async function checkStreamStatusAndUpdate(streams) {
+    const offlineStreams = [];
+    for (const stream of streams) {
+        console.log(`Checking stream ${stream.id}: ${stream.url}`);
+        try {
+            const isOnline = await checkStreamStatus(stream.url);
+            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}`);
+            updateStreamStatus(stream.id, isOnline);
+            console.log(`Stream ${stream.id} status updated in the database`);
+            if (!isOnline) {
+                offlineStreams.push(stream); // Add offline stream for retry
+            }
+        } catch (error) {
+            console.error(`Error checking stream ${stream.id}:`, error);
+        }
+        await sleep(15000); // Introduce a delay between each stream check
+    }
+    await retryOfflineStreams(offlineStreams);
+}
+
+async function retryOfflineStreams(offlineStreams) {
+    console.log('Retrying status check for offline streams:');
+    for (const stream of offlineStreams) {
+        console.log(`Retrying stream ${stream.id}: ${stream.url}`);
+        try {
+            const isOnline = await checkStreamStatus(stream.url);
+            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}`);
+            updateStreamStatus(stream.id, isOnline);
+            console.log(`Stream ${stream.id} status updated in the database`);
+        } catch (error) {
+            console.error(`Error retrying stream ${stream.id}:`, error);
+        }
+    }
+
+    // Generate M3U playlist after retrying streams
+    await generateM3UPlaylist();
+}
+
+async function generateM3UPlaylist() {
+    // Query to fetch online streams
+    const sql = "SELECT url, tvg_id, tvg_chno, tvg_logo, tvg_name FROM streams WHERE status = 'online'";
+    connection.query(sql, (err, rows, fields) => {
+        if (err) throw err;
+
+        // M3U header
+        let m3u_content = "#EXTM3U\n";
+
+        // Loop through the results and format the streams into M3U format
+        for (const row of rows) {
+            m3u_content += `#EXTINF:-1 tvg-id="${row.tvg_id}" tvg-chno="${row.tvg_chno}" tvg-name="${row.tvg_name}" tvg-logo="${row.tvg_logo}", ${row.tvg_name}\n`;
+            m3u_content += `${row.url}\n`;
+        }
+
+        // Write the M3U content to a file
+        const file_path = "/root/app/output.m3u";
+        fs.writeFileSync(file_path, m3u_content);
+        console.log(`M3U playlist generated and saved to ${file_path}`);
+    });
+}
+
+async function main() {
+    try {
+        // Connect to MySQL database
+        connection.connect();
+
+        // Check streams immediately
+        console.log('Checking streams...');
+        await fetchAndCheckStreams();
+        console.log('Stream check completed');
+
+        // Disconnect from the database
+        console.log('Disconnecting from database...');
+        await disconnectFromDatabase();
+        console.log('Script is now idle');
+
+        // Send email after script completion
+        await sendEmail();
+        console.log('Email sent successfully.');
+    } catch (error) {
+        console.error('Error in main:', error);
+        await disconnectFromDatabase(); // Disconnect from the database in case of error
+    }
+}
+
+// Function to send email
+async function sendEmail() {
+    // Create a SMTP transporter object
+    let transporter = nodemailer.createTransport({
+        host: 'mail.gmx.com', // Your SMTP server hostname
+        port: 587, // Your SMTP server port
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: 'm3uchecker@gmx.com', // Your email username
+            pass: 'd.3}ih54.FC,Ap2' // Your email password
+        }
+    });
+
+    // Email content
+    let mailOptions = {
+        from: 'm3uchecker@gmx.com', // Sender address
+        to: 'riot071@gmail.com', // List of recipients
+        subject: 'Script Execution Notification', // Subject line
+        text: 'The script has completed successfully.', // Plain text body
+        html: '<p>The script has completed successfully.</p>' // HTML body (optional)
+    };
+
+    // Send email
+    let info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: ', info.messageId);
+}
+
+// Call the main function to start the script
+main().then(() => {
+    console.log('Script execution completed.');
+}).catch(error => {
+    console.error('Error in main:', error);
+});
