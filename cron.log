@@ -1,0 +1,429 @@
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Stream 9 status updated to online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: offline
+Stream 13 status updated to offline
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: offline
+Stream 16 status updated to offline
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: online
+Retrying status check for offline streams:
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: online
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: online
+Stream 13 status updated to online
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: online
+Stream 16 status updated to online
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: online
+Retrying status check for offline streams:
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: offline
+Stream 4 status updated to offline
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: online
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: online
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: online
+Retrying status check for offline streams:
+Retrying stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Stream 4 status updated to online
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: offline
+Stream 13 status updated to offline
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: online
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: offline
+Stream 27 status updated to offline
+Retrying status check for offline streams:
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: offline
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Retrying stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: online
+Stream 13 status updated to online
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: online
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: online
+Stream 27 status updated to online
+Retrying status check for offline streams:
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
+Status changes to be sent in email: []
+Checking streams...
+Checking stream 1: http://beams-tv.online:80/76FVbRz4J/rohan1/9533
+Stream 1 status: online
+Checking stream 2: http://beams-tv.online:80/76FVbRz4J/rohan1/9534
+Stream 2 status: online
+Checking stream 3: https://bloomberg.com/media-manifest/streams/aus.m3u8
+Stream 3 status: online
+Checking stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: offline
+Stream 4 status updated to offline
+Checking stream 5: http://beams-tv.online:80/76FVbRz4J/rohan1/9536
+Stream 5 status: online
+Checking stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: offline
+Stream 6 status updated to offline
+Checking stream 7: http://beams-tv.online:80/76FVbRz4J/rohan1/9537
+Stream 7 status: online
+Checking stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Checking stream 9: http://beams-tv.online:80/76FVbRz4J/rohan1/7871
+Stream 9 status: online
+Checking stream 10: http://beams-tv.online:80/76FVbRz4J/rohan1/7855
+Stream 10 status: online
+Checking stream 11: http://beams-tv.online:80/76FVbRz4J/rohan1/8320
+Stream 11 status: online
+Checking stream 13: http://beams-tv.online:80/76FVbRz4J/rohan1/16312
+Stream 13 status: online
+Checking stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Checking stream 15: http://beams-tv.online:80/76FVbRz4J/rohan1/9660
+Stream 15 status: online
+Checking stream 16: http://beams-tv.online:80/76FVbRz4J/rohan1/9661
+Stream 16 status: online
+Checking stream 17: http://beams-tv.online:80/76FVbRz4J/rohan1/9662
+Stream 17 status: online
+Checking stream 18: http://beams-tv.online:80/76FVbRz4J/rohan1/9663
+Stream 18 status: online
+Checking stream 19: http://beams-tv.online:80/76FVbRz4J/rohan1/1163259
+Stream 19 status: online
+Checking stream 20: http://beams-tv.online:80/76FVbRz4J/rohan1/9665
+Stream 20 status: online
+Checking stream 21: http://beams-tv.online:80/76FVbRz4J/rohan1/9666
+Stream 21 status: online
+Checking stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Checking stream 23: http://beams-tv.online:80/76FVbRz4J/rohan1/9668
+Stream 23 status: online
+Checking stream 24: http://beams-tv.online:80/76FVbRz4J/rohan1/8436
+Stream 24 status: online
+Checking stream 25: http://beams-tv.online:80/76FVbRz4J/rohan1/9538
+Stream 25 status: online
+Checking stream 26: http://beams-tv.online:80/76FVbRz4J/rohan1/9539
+Stream 26 status: online
+Checking stream 27: http://beams-tv.online:80/76FVbRz4J/rohan1/7826
+Stream 27 status: online
+Retrying status check for offline streams:
+Retrying stream 4: http://beams-tv.online:80/76FVbRz4J/rohan1/9535
+Stream 4 status: online
+Retrying stream 6: http://beams-tv.online:80/76FVbRz4J/rohan1/7870
+Stream 6 status: online
+Retrying stream 8: http://beams-tv.online:80/76FVbRz4J/rohan1/9927
+Stream 8 status: offline
+Retrying stream 14: http://beams-tv.online:80/76FVbRz4J/rohan1/16616
+Stream 14 status: offline
+Retrying stream 22: http://tv365.me:80/live/R6VQR7Y17D/UDA6N88UM7/710941.ts
+Stream 22 status: offline
+Stream check completed
+Disconnecting from database...
+M3U playlist generated and saved to /root/app/output.m3u
+Disconnected from database
+Script is now idle
+Email sent successfully.
