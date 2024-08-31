@@ -250,8 +250,8 @@ async function sendEmail() {
         port: 587, // Your SMTP server port
         secure: false, // true for 465, false for other ports
         auth: {
-            user: 'm3uchecker@gmx.com', // Your email username
-            pass: 'd.3}ih54.FC,Ap2' // Your email password
+            user: '', // Your email username
+            pass: '' // Your email password
         }
     });
 
