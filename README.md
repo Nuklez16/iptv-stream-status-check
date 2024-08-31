@@ -26,3 +26,5 @@ Installation:
     Navigate to the script directory: cd stream-status-checker
     Install dependencies: npm install
     Configure your settings in the script.
+
+IF you need support installing this script or had questions on usage you can find me on discord add "Nukleuz"
