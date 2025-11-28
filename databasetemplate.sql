@@ -34,6 +34,7 @@ CREATE TABLE `streams` (
   `name` varchar(255) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
   `status` enum('online','offline') DEFAULT NULL,
+  `quality` enum('good','degraded','stalled','unverified') DEFAULT 'unverified',
   `last_checked` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `tvg_id` varchar(50) DEFAULT NULL,
   `tvg_chno` int(11) DEFAULT NULL,
@@ -45,9 +46,9 @@ CREATE TABLE `streams` (
 -- Dumping data for table `streams`
 --
 
-INSERT INTO `streams` (`id`, `name`, `url`, `status`, `last_checked`, `tvg_id`, `tvg_chno`, `tvg_logo`, `tvg_name`) VALUES
-(8, 'Optus 01', '', 'offline', '2024-08-31 02:57:28', 'os1', 8, '', 'Optus 01'),
-(27, 'CNBC (US)', '', 'online', '2024-08-31 02:57:26', 'CNBC.us', 26, NULL, 'CNBC (US)');
+INSERT INTO `streams` (`id`, `name`, `url`, `status`, `quality`, `last_checked`, `tvg_id`, `tvg_chno`, `tvg_logo`, `tvg_name`) VALUES
+(8, 'Optus 01', '', 'offline', 'unverified', '2024-08-31 02:57:28', 'os1', 8, '', 'Optus 01'),
+(27, 'CNBC (US)', '', 'online', 'unverified', '2024-08-31 02:57:26', 'CNBC.us', 26, NULL, 'CNBC (US)');
 
 --
 -- Indexes for dumped tables
