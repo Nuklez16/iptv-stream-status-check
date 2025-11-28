@@ -2,6 +2,8 @@ require('dotenv').config();
 const mysql = require('mysql');
 const { exec } = require('child_process');
 const fs = require('fs');
+const http = require('http');
+const path = require('path');
 const nodemailer = require('nodemailer');
 
 // MySQL connection configuration
@@ -12,6 +14,7 @@ const connection = mysql.createConnection({
     database: process.env.DB_DATABASE
 });
 
+const PORT = process.env.PORT || 3000;
 const statusChanges = []; // Array to store status change logs
 
 // Function to parse fractional frame rates like "30000/1001"
@@ -268,10 +271,180 @@ async function generateM3UPlaylist() {
     });
 }
 
-async function main() {
+function sendJson(res, statusCode, payload) {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(payload));
+}
+
+function parseRequestBody(req) {
+    return new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk) => {
+            data += chunk;
+        });
+        req.on('end', () => {
+            if (!data) {
+                resolve({});
+                return;
+            }
+            try {
+                resolve(JSON.parse(data));
+            } catch (error) {
+                reject(new Error('Invalid JSON payload'));
+            }
+        });
+        req.on('error', reject);
+    });
+}
+
+function serveStaticFile(pathname, res) {
+    const publicDir = path.join(__dirname, 'public');
+    const safePath = pathname === '/' ? '/index.html' : pathname;
+    const requestedPath = path.resolve(publicDir, `.${safePath}`);
+
+    if (!requestedPath.startsWith(publicDir)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden');
+        return;
+    }
+
+    const contentTypeMap = {
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript'
+    };
+    const ext = path.extname(requestedPath);
+    const contentType = contentTypeMap[ext] || 'text/plain';
+
+    fs.readFile(requestedPath, (error, data) => {
+        if (error) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+            return;
+        }
+
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+    });
+}
+
+function handleGetStreams(res) {
+    const query = 'SELECT id, name, url, status, quality, tvg_id, tvg_chno, tvg_logo, tvg_name FROM streams ORDER BY id DESC';
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error fetching streams:', error.message);
+            sendJson(res, 500, { message: 'Unable to fetch streams' });
+            return;
+        }
+
+        sendJson(res, 200, results);
+    });
+}
+
+async function handleCreateStream(req, res) {
     try {
-        // Connect to MySQL database
-        connection.connect();
+        const { name, url: streamUrl, tvg_id, tvg_chno, tvg_logo, tvg_name } = await parseRequestBody(req);
+
+        if (!streamUrl || !streamUrl.trim()) {
+            sendJson(res, 400, { message: 'Stream URL is required.' });
+            return;
+        }
+
+        const normalizedName = name?.trim() || null;
+        const normalizedTvgName = tvg_name?.trim() || normalizedName;
+        const normalizedChannelNumber = tvg_chno !== undefined && tvg_chno !== null && tvg_chno !== ''
+            ? Number(tvg_chno)
+            : null;
+
+        const newStream = {
+            name: normalizedName,
+            url: streamUrl.trim(),
+            status: 'offline',
+            quality: 'unverified',
+            tvg_id: tvg_id?.trim() || null,
+            tvg_chno: Number.isNaN(normalizedChannelNumber) ? null : normalizedChannelNumber,
+            tvg_logo: tvg_logo?.trim() || null,
+            tvg_name: normalizedTvgName
+        };
+
+        connection.query('INSERT INTO streams SET ?', newStream, (error, result) => {
+            if (error) {
+                console.error('Error creating stream:', error.message);
+                sendJson(res, 500, { message: 'Unable to create stream' });
+                return;
+            }
+
+            sendJson(res, 201, { id: result.insertId, ...newStream });
+        });
+    } catch (error) {
+        sendJson(res, 400, { message: error.message });
+    }
+}
+
+function handleDeleteStream(pathname, res) {
+    const id = Number(pathname.split('/')[3]);
+
+    if (!Number.isInteger(id)) {
+        sendJson(res, 400, { message: 'Invalid stream id' });
+        return;
+    }
+
+    connection.query('DELETE FROM streams WHERE id = ?', [id], (error, result) => {
+        if (error) {
+            console.error('Error deleting stream:', error.message);
+            sendJson(res, 500, { message: 'Unable to delete stream' });
+            return;
+        }
+
+        if (result.affectedRows === 0) {
+            sendJson(res, 404, { message: 'Stream not found' });
+            return;
+        }
+
+        sendJson(res, 200, { message: 'Stream deleted' });
+    });
+}
+
+function startServer() {
+    const server = http.createServer((req, res) => {
+        const parsedUrl = new URL(req.url, 'http://localhost');
+        const pathname = parsedUrl.pathname;
+
+        if (req.method === 'GET' && pathname === '/api/streams') {
+            handleGetStreams(res);
+            return;
+        }
+
+        if (req.method === 'POST' && pathname === '/api/streams') {
+            handleCreateStream(req, res);
+            return;
+        }
+
+        if (req.method === 'DELETE' && pathname.startsWith('/api/streams/')) {
+            handleDeleteStream(pathname, res);
+            return;
+        }
+
+        serveStaticFile(pathname, res);
+    });
+
+    server.listen(PORT, () => {
+        console.log(`Web dashboard is available on port ${PORT}`);
+    });
+}
+
+async function main({ skipConnect = false, disconnect = true } = {}) {
+    try {
+        // Connect to MySQL database if not already connected
+        if (!skipConnect) {
+            connection.connect((error) => {
+                if (error) {
+                    console.error('Error connecting to database:', error.message);
+                } else {
+                    console.log('Connected to database');
+                }
+            });
+        }
 
         // Check streams immediately
         console.log('Checking streams...');
@@ -281,16 +454,18 @@ async function main() {
         console.error('Error in main:', error);
     } finally {
         // Ensure disconnect happens only after all operations
-        console.log('Disconnecting from database...');
-        await disconnectFromDatabase();
-        console.log('Script is now idle');
+        if (disconnect) {
+            console.log('Disconnecting from database...');
+            await disconnectFromDatabase();
+            console.log('Script is now idle');
 
-        // Send email after script completion
-        try {
-            await sendEmail();
-            console.log('Email sent successfully.');
-        } catch (emailError) {
-            console.error('Error sending email:', emailError);
+            // Send email after script completion
+            try {
+                await sendEmail();
+                console.log('Email sent successfully.');
+            } catch (emailError) {
+                console.error('Error sending email:', emailError);
+            }
         }
     }
 }
@@ -322,5 +497,18 @@ async function sendEmail() {
     return transporter.sendMail(mailOptions);
 }
 
-// Run the main function
-main();
+connection.connect((error) => {
+    if (error) {
+        console.error('Error connecting to database:', error.message);
+    } else {
+        console.log('Connected to database');
+    }
+
+    startServer();
+
+    if (process.env.RUN_STATUS_CHECK === 'true') {
+        main({ skipConnect: true, disconnect: false }).catch((err) => {
+            console.error('Error during startup status check:', err);
+        });
+    }
+});

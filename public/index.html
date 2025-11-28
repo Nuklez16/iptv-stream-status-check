@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Stream Dashboard</title>
+    <style>
+        :root {
+            --background: #0b1021;
+            --card: #12172b;
+            --accent: #4f9cf9;
+            --text: #e6eefc;
+            --muted: #98a5c1;
+            --danger: #f05d6c;
+            --border: #1f2940;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at 20% 20%, rgba(79, 156, 249, 0.15), transparent 25%),
+                        radial-gradient(circle at 80% 0%, rgba(240, 93, 108, 0.12), transparent 18%),
+                        var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            background: rgba(12, 18, 38, 0.8);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(6px);
+            padding: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 24px auto 48px;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .card h2 {
+            margin: 0 0 12px;
+            font-size: 18px;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #0e1427;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: 2px solid rgba(79, 156, 249, 0.4);
+            border-color: rgba(79, 156, 249, 0.4);
+        }
+
+        .full-row {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            background: linear-gradient(135deg, #5ca3ff, #4f79f9);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 6px 18px rgba(79, 156, 249, 0.35);
+        }
+
+        button:hover { transform: translateY(-1px); }
+
+        button:active { transform: translateY(0); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 14px;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+        }
+
+        tr + tr td { border-top: 1px solid var(--border); }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .status-online { background: rgba(61, 199, 149, 0.15); color: #61e0ae; }
+        .status-offline { background: rgba(240, 93, 108, 0.1); color: var(--danger); }
+        .status-unknown { background: rgba(152, 165, 193, 0.15); color: var(--muted); }
+
+        .actions button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--danger);
+            padding: 8px 12px;
+            box-shadow: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 18px;
+        }
+
+        .alert {
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .alert-error { background: rgba(240, 93, 108, 0.1); color: var(--danger); border: 1px solid rgba(240, 93, 108, 0.3); }
+        .alert-success { background: rgba(61, 199, 149, 0.1); color: #61e0ae; border: 1px solid rgba(61, 199, 149, 0.4); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div>
+                <h1>Stream Dashboard</h1>
+                <p style="margin: 6px 0 0; color: var(--muted);">Add, review, and remove IPTV streams quickly.</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Add a Stream</h2>
+            <form id="streamForm">
+                <div>
+                    <label for="name">Name</label>
+                    <input id="name" name="name" placeholder="Optional channel label" />
+                </div>
+                <div class="full-row">
+                    <label for="url">Stream URL<span style="color: var(--danger);"> *</span></label>
+                    <input id="url" name="url" placeholder="http://example.com/stream" required />
+                </div>
+                <div>
+                    <label for="tvg_id">tvg-id</label>
+                    <input id="tvg_id" name="tvg_id" placeholder="unique-id" />
+                </div>
+                <div>
+                    <label for="tvg_chno">tvg-chno</label>
+                    <input id="tvg_chno" name="tvg_chno" type="number" min="0" placeholder="Channel #" />
+                </div>
+                <div>
+                    <label for="tvg_logo">tvg-logo</label>
+                    <input id="tvg_logo" name="tvg_logo" placeholder="Logo URL" />
+                </div>
+                <div>
+                    <label for="tvg_name">tvg-name</label>
+                    <input id="tvg_name" name="tvg_name" placeholder="Channel title" />
+                </div>
+                <div class="full-row" style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
+                    <div id="formAlert" aria-live="polite"></div>
+                    <button type="submit">Add Stream</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Streams</h2>
+            <div id="tableContainer">
+                <div class="empty-state">Loading streams…</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById('streamForm');
+        const alertBox = document.getElementById('formAlert');
+        const tableContainer = document.getElementById('tableContainer');
+
+        async function fetchStreams() {
+            try {
+                const response = await fetch('/api/streams');
+                if (!response.ok) throw new Error('Unable to load streams');
+                const streams = await response.json();
+                renderTable(streams);
+            } catch (error) {
+                tableContainer.innerHTML = `<div class="empty-state">${error.message}</div>`;
+            }
+        }
+
+        function renderTable(streams) {
+            if (!streams.length) {
+                tableContainer.innerHTML = '<div class="empty-state">No streams found. Add one above.</div>';
+                return;
+            }
+
+            const rows = streams.map(stream => {
+                const statusClass = stream.status === 'online'
+                    ? 'status-online'
+                    : (stream.status === 'offline' ? 'status-offline' : 'status-unknown');
+                const statusLabel = stream.status ? stream.status.toUpperCase() : 'UNKNOWN';
+
+                return `
+                    <tr>
+                        <td>${stream.id}</td>
+                        <td>${stream.name ?? '—'}</td>
+                        <td><code style="color: var(--muted);">${stream.url}</code></td>
+                        <td>
+                            <span class="status-chip ${statusClass}">
+                                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background: currentColor;"></span>
+                                ${statusLabel}
+                            </span>
+                        </td>
+                        <td>${stream.quality ?? 'unverified'}</td>
+                        <td class="actions">
+                            <button data-id="${stream.id}" aria-label="Delete stream ${stream.name ?? stream.id}">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tableContainer.innerHTML = `
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">ID</th>
+                                <th>Name</th>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Quality</th>
+                                <th style="width:120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+
+            tableContainer.querySelectorAll('button[data-id]').forEach(button => {
+                button.addEventListener('click', () => deleteStream(button.dataset.id));
+            });
+        }
+
+        async function deleteStream(id) {
+            if (!confirm('Delete this stream?')) return;
+
+            try {
+                const response = await fetch(`/api/streams/${id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body.message || 'Failed to delete stream');
+                }
+                await fetchStreams();
+            } catch (error) {
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = error.message;
+            }
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            alertBox.textContent = '';
+            alertBox.className = '';
+
+            const formData = new FormData(form);
+            const payload = Object.fromEntries(formData.entries());
+            payload.tvg_chno = payload.tvg_chno ? Number(payload.tvg_chno) : null;
+
+            try {
+                const response = await fetch('/api/streams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json().catch(() => ({}));
+                    throw new Error(errorBody.message || 'Unable to add stream');
+                }
+
+                form.reset();
+                alertBox.className = 'alert alert-success';
+                alertBox.textContent = 'Stream added';
+                fetchStreams();
+            } catch (error) {
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = error.message;
+            }
+        });
+
+        fetchStreams();
+    </script>
+</body>
+</html>
