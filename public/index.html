@@ -173,15 +173,26 @@
             padding: 18px;
         }
 
-        .alert {
-            margin: 12px 0 0;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-weight: 600;
+        .alert { 
+            margin: 12px 0 0; 
+            padding: 10px 12px; 
+            border-radius: 10px; 
+            font-weight: 600; 
         }
 
         .alert-error { background: rgba(240, 93, 108, 0.1); color: var(--danger); border: 1px solid rgba(240, 93, 108, 0.3); }
         .alert-success { background: rgba(61, 199, 149, 0.1); color: #61e0ae; border: 1px solid rgba(61, 199, 149, 0.4); }
+
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .settings-row > div { flex: 1; min-width: 220px; }
+
+        .muted-text { color: var(--muted); font-size: 13px; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -230,6 +241,21 @@
         </section>
 
         <section class="card">
+            <h2>M3U Check Schedule</h2>
+            <form id="settingsForm" class="settings-row">
+                <div>
+                    <label for="frequencyMinutes">Run every (minutes)</label>
+                    <input id="frequencyMinutes" name="frequencyMinutes" type="number" min="1" max="1440" required />
+                    <p id="cronSummary" class="muted-text"></p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div id="settingsAlert" aria-live="polite" style="flex:1;"></div>
+                    <button type="submit">Save Schedule</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
             <h2>Streams</h2>
             <div id="tableContainer">
                 <div class="empty-state">Loading streams…</div>
@@ -241,6 +267,10 @@
         const form = document.getElementById('streamForm');
         const alertBox = document.getElementById('formAlert');
         const tableContainer = document.getElementById('tableContainer');
+        const settingsForm = document.getElementById('settingsForm');
+        const frequencyInput = document.getElementById('frequencyMinutes');
+        const cronSummary = document.getElementById('cronSummary');
+        const settingsAlert = document.getElementById('settingsAlert');
 
         async function fetchStreams() {
             try {
@@ -354,7 +384,78 @@
             }
         });
 
+        function renderCronSummary(minutes) {
+            if (!minutes) {
+                cronSummary.textContent = '';
+                return;
+            }
+
+            const hours = minutes / 60;
+            if (minutes % 60 === 0 && hours >= 1) {
+                cronSummary.textContent = `Runs every ${hours === 1 ? 'hour' : `${hours} hours`}.`;
+            } else {
+                cronSummary.textContent = `Runs every ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                if (!response.ok) throw new Error('Unable to load schedule');
+                const body = await response.json();
+                frequencyInput.value = body.frequencyMinutes || 60;
+                renderCronSummary(Number(frequencyInput.value));
+            } catch (error) {
+                settingsAlert.className = 'alert alert-error';
+                settingsAlert.textContent = error.message;
+            }
+        }
+
+        settingsForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            settingsAlert.textContent = '';
+            settingsAlert.className = '';
+
+            const minutes = Number(frequencyInput.value);
+            renderCronSummary(minutes);
+
+            if (minutes > 59 && minutes % 60 !== 0) {
+                settingsAlert.className = 'alert alert-error';
+                settingsAlert.textContent = 'Use 1-59 minutes or a whole number of hours (multiples of 60).';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frequencyMinutes: minutes })
+                });
+
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(body.message || 'Unable to save schedule');
+                }
+
+                const body = await response.json();
+                renderCronSummary(body.frequencyMinutes);
+                settingsAlert.className = 'alert alert-success';
+                settingsAlert.textContent = 'Schedule updated';
+            } catch (error) {
+                settingsAlert.className = 'alert alert-error';
+                settingsAlert.textContent = error.message;
+            }
+        });
+
+        frequencyInput.addEventListener('input', (event) => {
+            const value = Number(event.target.value);
+            if (Number.isFinite(value)) {
+                renderCronSummary(value);
+            }
+        });
+
         fetchStreams();
+        loadSettings();
     </script>
 </body>
 </html>

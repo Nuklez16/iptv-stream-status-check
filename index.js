@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 
 // MySQL connection configuration
@@ -16,6 +17,11 @@ const connection = mysql.createConnection({
 
 const PORT = process.env.PORT || 3000;
 const statusChanges = []; // Array to store status change logs
+const SETTINGS_PATH = path.join(__dirname, 'settings.json');
+const DEFAULT_SETTINGS = { frequencyMinutes: 60 };
+let scheduledTask = null;
+let isStatusCheckRunning = false;
+let settings = loadSettings();
 
 // Function to parse fractional frame rates like "30000/1001"
 function parseFrameRate(rateString) {
@@ -137,6 +143,61 @@ function logStatusChange(name, status, quality) {
     } else {
         console.warn(`Invalid status change: Name - ${name}, Status - ${status}`);
     }
+}
+
+function loadSettings() {
+    try {
+        const contents = fs.readFileSync(SETTINGS_PATH, 'utf-8');
+        const parsed = JSON.parse(contents);
+        if (!isSupportedInterval(parsed.frequencyMinutes)) {
+            return { ...DEFAULT_SETTINGS };
+        }
+        return parsed;
+    } catch (error) {
+        return { ...DEFAULT_SETTINGS };
+    }
+}
+
+function saveSettings(settings) {
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+}
+
+function isSupportedInterval(minutes) {
+    return Number.isInteger(minutes)
+        && minutes >= 1
+        && minutes <= 1440
+        && (minutes < 60 || minutes % 60 === 0);
+}
+
+function minutesToCron(minutes) {
+    let normalized = minutes;
+    if (!isSupportedInterval(normalized)) {
+        normalized = DEFAULT_SETTINGS.frequencyMinutes;
+    }
+
+    if (normalized >= 60 && normalized % 60 === 0) {
+        const hours = Math.max(1, Math.floor(normalized / 60));
+        return `0 */${hours} * * *`;
+    }
+
+    return `*/${Math.max(1, normalized)} * * * *`;
+}
+
+function scheduleStatusCheck(frequencyMinutes) {
+    const cronExpression = minutesToCron(frequencyMinutes);
+
+    if (!cron.validate(cronExpression)) {
+        console.warn(`Invalid cron expression generated (${cronExpression}). Falling back to default.`);
+    }
+
+    const finalCron = cron.validate(cronExpression) ? cronExpression : minutesToCron(DEFAULT_SETTINGS.frequencyMinutes);
+
+    if (scheduledTask) {
+        scheduledTask.stop();
+    }
+
+    scheduledTask = cron.schedule(finalCron, runStatusCheckJob, { scheduled: true });
+    console.log(`Scheduled status check with cron expression: ${finalCron}`);
 }
 
 // Function to introduce a delay
@@ -269,6 +330,24 @@ async function generateM3UPlaylist() {
         fs.writeFileSync(file_path, m3u_content);
         console.log(`M3U playlist generated and saved to ${file_path}`);
     });
+}
+
+async function runStatusCheckJob() {
+    if (isStatusCheckRunning) {
+        console.log('Status check already running, skipping this interval.');
+        return;
+    }
+
+    isStatusCheckRunning = true;
+    statusChanges.length = 0;
+
+    try {
+        await main({ skipConnect: true, disconnect: false });
+    } catch (error) {
+        console.error('Error running scheduled status check:', error);
+    } finally {
+        isStatusCheckRunning = false;
+    }
 }
 
 function sendJson(res, statusCode, payload) {
@@ -405,6 +484,37 @@ function handleDeleteStream(pathname, res) {
     });
 }
 
+function handleGetSettings(res) {
+    sendJson(res, 200, {
+        frequencyMinutes: settings.frequencyMinutes,
+        cronExpression: minutesToCron(settings.frequencyMinutes)
+    });
+}
+
+async function handleUpdateSettings(req, res) {
+    try {
+        const body = await parseRequestBody(req);
+        const frequencyMinutes = Number(body.frequencyMinutes);
+
+        if (!isSupportedInterval(Math.round(frequencyMinutes))) {
+            sendJson(res, 400, { message: 'frequencyMinutes must be 1-59 minutes or a whole-number of hours (multiples of 60).' });
+            return;
+        }
+
+        settings = { frequencyMinutes: Math.round(frequencyMinutes) };
+        saveSettings(settings);
+        scheduleStatusCheck(settings.frequencyMinutes);
+
+        sendJson(res, 200, {
+            message: 'Settings updated',
+            frequencyMinutes: settings.frequencyMinutes,
+            cronExpression: minutesToCron(settings.frequencyMinutes)
+        });
+    } catch (error) {
+        sendJson(res, 400, { message: error.message });
+    }
+}
+
 function startServer() {
     const server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url, 'http://localhost');
@@ -425,6 +535,16 @@ function startServer() {
             return;
         }
 
+        if (req.method === 'GET' && pathname === '/api/settings') {
+            handleGetSettings(res);
+            return;
+        }
+
+        if (req.method === 'POST' && pathname === '/api/settings') {
+            handleUpdateSettings(req, res);
+            return;
+        }
+
         serveStaticFile(pathname, res);
     });
 
@@ -435,6 +555,7 @@ function startServer() {
 
 async function main({ skipConnect = false, disconnect = true } = {}) {
     try {
+        statusChanges.length = 0;
         // Connect to MySQL database if not already connected
         if (!skipConnect) {
             connection.connect((error) => {
@@ -505,6 +626,7 @@ connection.connect((error) => {
     }
 
     startServer();
+    scheduleStatusCheck(settings.frequencyMinutes);
 
     if (process.env.RUN_STATUS_CHECK === 'true') {
         main({ skipConnect: true, disconnect: false }).catch((err) => {
