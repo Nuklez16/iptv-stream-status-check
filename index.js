@@ -14,33 +14,85 @@ const connection = mysql.createConnection({
 
 const statusChanges = []; // Array to store status change logs
 
-// Function to check if a stream URL is reachable
-function checkStreamStatus(url) {
-    return new Promise((resolve, reject) => {
-        const listenTimeoutInSeconds = 40;
-        const ffprobeCommand = `ffprobe -v quiet -print_format json -show_streams -listen_timeout ${listenTimeoutInSeconds} "${url}"`;
-        exec(ffprobeCommand, (error, stdout, stderr) => {
-            if (error || stderr) {
-                resolve(false);
+// Function to parse fractional frame rates like "30000/1001"
+function parseFrameRate(rateString) {
+    if (!rateString || rateString === '0/0') {
+        return null;
+    }
+    const [numerator, denominator] = rateString.split('/').map(Number);
+    if (!numerator || !denominator) {
+        return null;
+    }
+    return numerator / denominator;
+}
+
+// Fetch expected frame rate using ffprobe
+async function getExpectedFrameRate(url) {
+    const listenTimeoutInSeconds = 40;
+    const ffprobeCommand = `ffprobe -v quiet -print_format json -show_streams -select_streams v:0 -listen_timeout ${listenTimeoutInSeconds} "${url}"`;
+
+    return new Promise((resolve) => {
+        exec(ffprobeCommand, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout) => {
+            if (error) {
+                resolve(null);
                 return;
             }
             try {
-                const streams = JSON.parse(stdout).streams;
-                resolve(streams && streams.length > 0);
+                const parsed = JSON.parse(stdout);
+                const rate = parsed?.streams?.[0]?.avg_frame_rate;
+                resolve(parseFrameRate(rate));
             } catch {
-                resolve(false);
+                resolve(null);
             }
         });
     });
 }
 
-async function updateStreamStatus(streamId, isOnline) {
+// Probe frames delivered over ~5 seconds to measure quality
+async function probeStreamFrames(url) {
+    const ffmpegCommand = `ffmpeg -v error -read_intervals 0%+5 -i "${url}" -map 0:v:0 -an -f null -`;
+    return new Promise((resolve) => {
+        exec(ffmpegCommand, { maxBuffer: 10 * 1024 * 1024, timeout: 70000 }, (error, stdout, stderr) => {
+            const stderrOutput = stderr || '';
+            const frameMatches = [...stderrOutput.matchAll(/frame=\s*(\d+)/g)];
+            const frameCount = frameMatches.length ? parseInt(frameMatches[frameMatches.length - 1][1], 10) : 0;
+            const isReachable = !error;
+            resolve({ frameCount, isReachable });
+        });
+    });
+}
+
+async function checkStreamStatus(url) {
+    const expectedFrameRate = await getExpectedFrameRate(url);
+    const { frameCount, isReachable } = await probeStreamFrames(url);
+
+    if (!isReachable) {
+        return { isOnline: false, quality: 'unverified', frameCount, expectedFrameRate };
+    }
+
+    const durationSeconds = 5;
+    const expectedFrames = expectedFrameRate ? expectedFrameRate * durationSeconds : 0;
+
+    if (frameCount === 0) {
+        return { isOnline: true, quality: 'stalled', frameCount, expectedFrameRate };
+    }
+
+    if (expectedFrames > 0) {
+        const dropRatio = (expectedFrames - frameCount) / expectedFrames;
+        const quality = dropRatio > 0.2 ? 'degraded' : 'good';
+        return { isOnline: true, quality, frameCount, expectedFrameRate };
+    }
+
+    return { isOnline: true, quality: 'unverified', frameCount, expectedFrameRate };
+}
+
+async function updateStreamStatus(streamId, isOnline, quality) {
     const status = isOnline ? 'online' : 'offline';
-    const query = 'UPDATE streams SET status = ? WHERE id = ?';
+    const query = 'UPDATE streams SET status = ?, quality = ? WHERE id = ?';
 
     return new Promise((resolve, reject) => {
         // Fetch current status and name from the database
-        connection.query('SELECT status, name FROM streams WHERE id = ?', [streamId], (error, results) => {
+        connection.query('SELECT status, name, quality FROM streams WHERE id = ?', [streamId], (error, results) => {
             if (error) {
                 console.error('Error fetching current status:', error.message);
                 reject(error);
@@ -49,16 +101,17 @@ async function updateStreamStatus(streamId, isOnline) {
 
             if (results.length > 0) {
                 const currentStatus = results[0].status;
+                const currentQuality = results[0].quality;
                 const name = results[0].name || 'Unnamed Stream'; // Default to 'Unnamed Stream' if name is null or undefined
 
-                if (currentStatus !== status) {
-                    connection.query(query, [status, streamId], (error) => {
+                if (currentStatus !== status || currentQuality !== quality) {
+                    connection.query(query, [status, quality, streamId], (error) => {
                         if (error) {
                             console.error('Error updating stream status:', error.message);
                             reject(error);
                         } else {
                             console.log(`Stream ${streamId} status updated to ${status}`);
-                            logStatusChange(name, status); // Log the status change with name
+                            logStatusChange(name, status, quality); // Log the status change with name
                             resolve(); // Resolve the promise after status update
                         }
                     });
@@ -74,9 +127,10 @@ async function updateStreamStatus(streamId, isOnline) {
 }
 
 // Function to log status changes
-function logStatusChange(name, status) {
+function logStatusChange(name, status, quality) {
     if (name && status) {
-        statusChanges.push(`${name} - ${status}`);
+        const qualitySuffix = quality ? ` (quality: ${quality})` : '';
+        statusChanges.push(`${name} - ${status}${qualitySuffix}`);
     } else {
         console.warn(`Invalid status change: Name - ${name}, Status - ${status}`);
     }
@@ -128,9 +182,9 @@ async function checkStreamStatusAndUpdate(streams) {
     for (const stream of streams) {
         console.log(`Checking stream ${stream.id}: ${stream.url}`);
         try {
-            const isOnline = await checkStreamStatus(stream.url);
-            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}`);
-            await updateStreamStatus(stream.id, isOnline);
+            const { isOnline, quality, frameCount, expectedFrameRate } = await checkStreamStatus(stream.url);
+            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}, quality: ${quality}, frames: ${frameCount}, fps: ${expectedFrameRate ?? 'unknown'}`);
+            await updateStreamStatus(stream.id, isOnline, quality);
             if (!isOnline) {
                 offlineStreams.push(stream); // Add offline stream for retry
             }
@@ -149,8 +203,8 @@ async function retryOfflineStreams(offlineStreams) {
     for (const stream of offlineStreams) {
         console.log(`Retrying stream ${stream.id}: ${stream.url}`);
         try {
-            const isOnline = await checkStreamStatus(stream.url);
-            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}`);
+            const { isOnline, quality, frameCount, expectedFrameRate } = await checkStreamStatus(stream.url);
+            console.log(`Stream ${stream.id} status: ${isOnline ? 'online' : 'offline'}, quality: ${quality}, frames: ${frameCount}, fps: ${expectedFrameRate ?? 'unknown'}`);
             const oldStatus = isOnline ? 'offline' : 'online';
 
             // Fetch stream name before logging the status change
@@ -165,18 +219,19 @@ async function retryOfflineStreams(offlineStreams) {
                 });
             });
 
-            if (result && result.length > 0) {
-                const name = result[0].name || 'Unnamed Stream'; // Fallback to 'Unnamed Stream' if no name
+                if (result && result.length > 0) {
+                    const name = result[0].name || 'Unnamed Stream'; // Fallback to 'Unnamed Stream' if no name
 
-                if (isOnline !== (oldStatus === 'online')) {
-                    await updateStreamStatus(stream.id, isOnline); // Update status in the database
-                    retryStatusChanges.push({
-                        id: stream.id,
-                        name: name, // Use the actual name
-                        status: isOnline ? 'online' : 'offline'
-                    });
+                    if (isOnline !== (oldStatus === 'online')) {
+                        await updateStreamStatus(stream.id, isOnline, quality); // Update status in the database
+                        retryStatusChanges.push({
+                            id: stream.id,
+                            name: name, // Use the actual name
+                            status: isOnline ? 'online' : 'offline',
+                            quality
+                        });
+                    }
                 }
-            }
         } catch (error) {
             console.error(`Error retrying stream ${stream.id}:`, error);
         }
@@ -184,7 +239,7 @@ async function retryOfflineStreams(offlineStreams) {
 
     // Combine retryStatusChanges with statusChanges
     retryStatusChanges.forEach(change => {
-        logStatusChange(change.name, change.status);
+        logStatusChange(change.name, change.status, change.quality);
     });
 
     // Generate M3U playlist after retrying streams
