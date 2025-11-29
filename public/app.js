@@ -27,6 +27,7 @@ socket.on("job-complete", (payload) => {
     }
 
     updatePlaylistDetails(payload);
+    loadPlaylistPreview();
 });
 
 function appendLog(text) {
@@ -266,6 +267,64 @@ async function loadPlaylistInfo() {
     }
 }
 
+async function loadPlaylistPreview() {
+    const statusEl = document.getElementById("playlistEmptyMessage");
+    const listEl = document.getElementById("playlistChannels");
+
+    listEl.innerHTML = "";
+    statusEl.textContent = "Loading playlist...";
+
+    try {
+        const res = await fetch("/api/playlist/channels");
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data?.message || "Unable to load playlist");
+        }
+
+        renderPlaylistChannels(data.channels || []);
+    } catch (err) {
+        statusEl.textContent = err.message;
+    }
+}
+
+function renderPlaylistChannels(channels) {
+    const listEl = document.getElementById("playlistChannels");
+    const statusEl = document.getElementById("playlistEmptyMessage");
+
+    listEl.innerHTML = "";
+
+    if (!channels?.length) {
+        statusEl.textContent = "Playlist not generated yet or empty.";
+        return;
+    }
+
+    statusEl.textContent = `${channels.length} channels in current playlist.`;
+
+    channels.forEach(channel => {
+        const channelEl = document.createElement("div");
+        channelEl.className = "playlist-channel";
+
+        const safeTitle = channel.tvg_name || channel.name || "Untitled Channel";
+        const metaParts = [];
+        if (channel.tvg_id) metaParts.push(`ID: ${channel.tvg_id}`);
+        if (channel.tvg_chno) metaParts.push(`CH ${channel.tvg_chno}`);
+
+        channelEl.innerHTML = `
+            <div class="playlist-channel-header">
+                <div>
+                    <div class="playlist-channel-title">${safeTitle}</div>
+                    <div class="playlist-channel-meta">${metaParts.join(" • ") || "No metadata"}</div>
+                </div>
+                ${channel.tvg_logo ? `<img src="${channel.tvg_logo}" alt="${safeTitle}" class="playlist-channel-logo" />` : ""}
+            </div>
+            <div class="playlist-channel-url" title="${channel.url}">${channel.url}</div>
+        `;
+
+        listEl.appendChild(channelEl);
+    });
+}
+
 
 // ==========================
 //  RUN CHECK NOW
@@ -295,6 +354,7 @@ document.getElementById("refreshBtn").addEventListener("click", fetchStreams);
 document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
 document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
 document.getElementById("importBtn").addEventListener("click", importStreams);
+document.getElementById("refreshPlaylistPreviewBtn").addEventListener("click", loadPlaylistPreview);
 
 
 // ==========================
@@ -303,3 +363,4 @@ document.getElementById("importBtn").addEventListener("click", importStreams);
 fetchStreams();
 loadSettings();
 loadPlaylistInfo();
+loadPlaylistPreview();
