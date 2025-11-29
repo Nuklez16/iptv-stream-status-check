@@ -17,6 +17,8 @@ const DEBUG = true; // set to false in production if you want quieter logs
 // ===================================================================
 // A. HTTP request with full redirect + cookie persistence
 // ===================================================================
+const REQUEST_TIMEOUT_MS = 15000;
+
 function httpGetWithRedirects(rawUrl, headers = {}, maxRedirects = 8) {
   return new Promise((resolve, reject) => {
     const cookies = []; // store ALL cookies across hops
@@ -79,7 +81,13 @@ function httpGetWithRedirects(rawUrl, headers = {}, maxRedirects = 8) {
         });
       });
 
-      req.on("error", reject);
+      req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`));
+      });
+
+      req.on("error", (err) => {
+        reject(err);
+      });
       req.end();
     }
 
