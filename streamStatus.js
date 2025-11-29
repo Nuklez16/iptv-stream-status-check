@@ -7,12 +7,13 @@
 // - Compatible with ffmpeg 5.1 (Debian 12) — uses `-t`, no `-read_intervals`
 // =============================================================
 
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 
 const DEBUG = true; // set to false in production if you want quieter logs
+const REQUEST_TIMEOUT_MS = 15000;
 
 // ===================================================================
 // A. HTTP request with full redirect + cookie persistence
@@ -80,6 +81,9 @@ function httpGetWithRedirects(rawUrl, headers = {}, maxRedirects = 8) {
       });
 
       req.on("error", reject);
+      req.setTimeout(REQUEST_TIMEOUT_MS, () => {
+        req.destroy(new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`));
+      });
       req.end();
     }
 
@@ -164,37 +168,73 @@ async function ffmpegProbeVariant(variantUrl, { ua, referer, origin, cookieHeade
   `.replace(/\s+/g, " ");
 
   return new Promise((resolve) => {
-    exec(
-      cmd,
-      { maxBuffer: 50 * 1024 * 1024, timeout: 90000 },
-      (error, stdout, stderr) => {
-        const output = (stdout || "") + (stderr || "");
+    if (DEBUG) {
+      console.log("\n===== FFMPEG DEBUG START =====");
+      console.log("Variant URL:", variantUrl);
+      console.log("Headers passed to ffmpeg:");
+      console.log("UA:", ua);
+      console.log("Referer:", referer);
+      console.log("Origin:", origin);
+      console.log("Cookie:", cookieHeader);
+      console.log("CMD:", cmd);
+      console.log("--------------------------------\n");
+    }
 
-        const matches = [...output.matchAll(/frame=\s*([0-9]+)/g)];
-        const frameCount = matches.length
-          ? parseInt(matches[matches.length - 1][1], 10)
-          : 0;
+    const child = spawn(cmd, {
+      shell: true,
+      env: process.env,
+    });
 
-        if (DEBUG) {
-          console.log("\n===== FFMPEG DEBUG =====");
-          console.log("Variant URL:", variantUrl);
-          console.log("Headers passed to ffmpeg:");
-          console.log("UA:", ua);
-          console.log("Referer:", referer);
-          console.log("Origin:", origin);
-          console.log("Cookie:", cookieHeader);
-          console.log("CMD:", cmd);
-          console.log("----- FFMPEG OUTPUT -----");
-          console.log(output.substring(0, 4000)); // trim to keep logs reasonable
-          console.log("========================\n");
-        }
+    let output = "";
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, 45000);
 
-        resolve({
-          reachable: frameCount > 0,
-          frameCount,
-        });
+    const logChunk = (prefix, data) => {
+      const text = data.toString();
+      output += text;
+      if (DEBUG) {
+        console.log(`[ffmpeg ${prefix}] ${text.trimEnd()}`);
       }
-    );
+    };
+
+    child.stdout.on("data", (data) => logChunk("stdout", data));
+    child.stderr.on("data", (data) => logChunk("stderr", data));
+
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      if (DEBUG) {
+        console.log("ffmpeg spawn error:", error.message);
+      }
+      resolve({ reachable: false, frameCount: 0 });
+    });
+
+    child.on("close", (code, signal) => {
+      clearTimeout(timeout);
+
+      const matches = [...output.matchAll(/frame=\s*([0-9]+)/g)];
+      const frameCount = matches.length
+        ? parseInt(matches[matches.length - 1][1], 10)
+        : 0;
+
+      if (DEBUG) {
+        console.log("\n===== FFMPEG DEBUG END =====");
+        console.log("Exit code:", code, "Signal:", signal);
+        if (timedOut) {
+          console.log("ffmpeg terminated due to timeout (45s).");
+        }
+        console.log("Captured output (truncated):");
+        console.log(output.substring(0, 4000));
+        console.log("============================\n");
+      }
+
+      resolve({
+        reachable: !timedOut && frameCount > 0,
+        frameCount,
+      });
+    });
   });
 }
 

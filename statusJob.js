@@ -145,6 +145,14 @@ async function retryOfflineStreams(offlineStreams) {
 async function fetchAndCheckStreams() {
   try {
     const streams = await fetchStreamsFromDatabase();
+
+    log(`Fetched ${streams.length} stream(s) from database.`);
+
+    if (!streams.length) {
+      log("No streams to check. Add a stream to begin monitoring.");
+      return;
+    }
+
     await checkStreamStatusAndUpdate(streams);
   } catch (err) {
     log(`Fetch error: ${err.message}`);
