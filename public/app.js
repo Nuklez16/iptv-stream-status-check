@@ -61,6 +61,84 @@ async function fetchStreams() {
     renderStreams(streams);
 }
 
+async function importStreams() {
+    const textarea = document.getElementById("importTextarea");
+    const statusEl = document.getElementById("importStatus");
+    statusEl.textContent = "";
+
+    const content = textarea.value;
+
+    if (!content.trim()) {
+        statusEl.textContent = "Paste playlist content first.";
+        return;
+    }
+
+    const res = await fetch("/api/streams/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        statusEl.textContent = data?.message || "Import failed.";
+        return;
+    }
+
+    statusEl.textContent = `Imported ${data.imported} entries (${data.logoCount} with logos).`;
+    renderImportSummary(data);
+    fetchStreams();
+}
+
+function renderImportSummary(summary) {
+    const container = document.getElementById("importSummary");
+    container.innerHTML = "";
+
+    if (!summary?.groups?.length) {
+        container.innerHTML = "<p class=\"tiny\">No summary available.</p>";
+        return;
+    }
+
+    summary.groups.forEach(group => {
+        const groupEl = document.createElement("div");
+        groupEl.className = "import-summary-group";
+
+        const title = document.createElement("div");
+        title.className = "import-summary-title";
+        title.textContent = `${group.name} (${group.count})`;
+        groupEl.appendChild(title);
+
+        const meta = document.createElement("div");
+        meta.className = "import-summary-meta";
+        meta.textContent = `${group.logoCount} logos`;
+        groupEl.appendChild(meta);
+
+        const sampleList = document.createElement("div");
+        sampleList.className = "import-summary-samples";
+        group.samples?.forEach(sample => {
+            const item = document.createElement("div");
+            item.className = "import-summary-sample";
+
+            if (sample.logo) {
+                const img = document.createElement("img");
+                img.src = sample.logo;
+                img.alt = sample.name;
+                item.appendChild(img);
+            }
+
+            const name = document.createElement("span");
+            name.textContent = sample.name;
+            item.appendChild(name);
+
+            sampleList.appendChild(item);
+        });
+
+        groupEl.appendChild(sampleList);
+        container.appendChild(groupEl);
+    });
+}
+
 function renderStreams(streams) {
     const tbody = document.querySelector("#streamsTable tbody");
     tbody.innerHTML = "";
@@ -216,6 +294,7 @@ document.getElementById("addStreamBtn").addEventListener("click", addStream);
 document.getElementById("refreshBtn").addEventListener("click", fetchStreams);
 document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
 document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
+document.getElementById("importBtn").addEventListener("click", importStreams);
 
 
 // ==========================
