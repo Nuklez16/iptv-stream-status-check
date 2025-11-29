@@ -131,6 +131,34 @@ th, td {
 .quality-degraded { color: #f97316; }
 .quality-stalled { color: #ef4444; }
 
+.cell-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card);
+    color: inherit;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.logo-cell {
+    min-width: 110px;
+}
+
+.table-logo {
+    width: 64px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+}
+
 
 /* -------------------- */
 /*       LOG VIEWER     */
