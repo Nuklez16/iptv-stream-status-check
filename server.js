@@ -214,60 +214,6 @@ function createServer(app, scheduleStatusCheck) {
         }
     });
 
-    app.put("/api/streams/:id", async (req, res) => {
-        const id = Number(req.params.id);
-        if (!Number.isInteger(id)) {
-            return res.status(400).json({ message: "Invalid ID" });
-        }
-
-        const hasFields = ["name", "url", "tvg_id", "tvg_chno", "tvg_logo", "tvg_name"].some(key =>
-            Object.prototype.hasOwnProperty.call(req.body || {}, key)
-        );
-
-        if (!hasFields) {
-            return res.status(400).json({ message: "No update fields provided" });
-        }
-
-        try {
-            const rows = await query(
-                "SELECT id, name, url, tvg_id, tvg_chno, tvg_logo, tvg_name FROM streams WHERE id = ?",
-                [id]
-            );
-
-            if (!rows.length) {
-                return res.status(404).json({ message: "Not found" });
-            }
-
-            const existing = rows[0];
-
-            const updated = {
-                name: req.body.name !== undefined ? (req.body.name?.trim() || null) : existing.name,
-                url: req.body.url !== undefined ? req.body.url.trim() : existing.url,
-                tvg_id: req.body.tvg_id !== undefined ? (req.body.tvg_id?.trim() || null) : existing.tvg_id,
-                tvg_chno: req.body.tvg_chno !== undefined ? req.body.tvg_chno || null : existing.tvg_chno,
-                tvg_logo: req.body.tvg_logo !== undefined ? req.body.tvg_logo || null : existing.tvg_logo,
-                tvg_name: req.body.tvg_name !== undefined
-                    ? (req.body.tvg_name?.trim() || req.body.name?.trim() || null)
-                    : (existing.tvg_name || existing.name),
-            };
-
-            if (!updated.url || !updated.url.trim()) {
-                return res.status(400).json({ message: "URL required" });
-            }
-
-            updated.url = updated.url.trim();
-
-            await query(
-                "UPDATE streams SET name = ?, url = ?, tvg_id = ?, tvg_chno = ?, tvg_logo = ?, tvg_name = ? WHERE id = ?",
-                [updated.name, updated.url, updated.tvg_id, updated.tvg_chno, updated.tvg_logo, updated.tvg_name, id]
-            );
-
-            res.json({ message: "Updated", stream: { id, ...updated } });
-        } catch (err) {
-            res.status(500).json({ message: "DB error" });
-        }
-    });
-
     app.get("/api/playlist/download", (req, res) => {
         const info = getPlaylistInfo();
 
