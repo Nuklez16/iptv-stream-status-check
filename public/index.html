@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>M3U Stream Checker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>M3U Stream Checker</h1>
+        <p>Monitor, test and manage all your streams in real time.</p>
+        <button id="darkModeBtn" class="secondary-btn">Toggle Dark Mode</button>
+    </header>
+
+    <!-- Settings -->
+    <section class="settings-card">
+        <h2>Checker Settings</h2>
+
+        <div class="settings">
+            <label>Check Frequency (minutes):</label>
+            <input id="frequencyInput" type="number" min="1" max="1440">
+            <button id="saveSettingsBtn">Save</button>
+            <button id="runCheckNowBtn" class="accent-btn">Run Check Now</button>
+        </div>
+
+        <p class="small">Valid: 1–59 minutes, or multiples of 60 (60, 120, 180...)</p>
+        <p id="cronText" class="cron-display"></p>
+    </section>
+
+    <!-- Add Stream -->
+    <section class="create-card">
+        <h2>Add Stream</h2>
+
+        <div class="form">
+            <input id="nameInput" placeholder="Stream Name">
+            <input id="urlInput" placeholder="Stream URL">
+
+            <div class="form-row">
+                <input id="tvgNameInput" placeholder="tvg-name">
+                <input id="tvgIdInput" placeholder="tvg-id">
+            </div>
+
+            <div class="form-row">
+                <input id="tvgNumberInput" placeholder="tvg-chno" type="number">
+                <input id="tvgLogoInput" placeholder="tvg-logo URL">
+            </div>
+
+            <button id="addStreamBtn">Add Stream</button>
+        </div>
+    </section>
+
+    <!-- Streams Table -->
+    <section class="streams-card">
+        <h2>Streams</h2>
+        <button id="refreshBtn" class="refresh-btn">Refresh</button>
+
+        <table id="streamsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Quality</th>
+                    <th>URL</th>
+                    <th>tvg-name</th>
+                    <th>tvg-chno</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+    <!-- Live Logs -->
+    <section class="logs-card">
+        <h2>Live Logs</h2>
+        <pre id="logOutput" class="log-box"></pre>
+    </section>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

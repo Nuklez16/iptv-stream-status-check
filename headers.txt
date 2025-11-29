@@ -1,0 +1,27 @@
+HTTP/2 200 
+content-type: application/vnd.apple.mpegurl; charset=utf-8
+server: openresty
+set-cookie: _pxhd=oPIeEePlEnxzefnN-Cse5w2a2uP0Z4IXSBN05xfTXraFZyt9RhogO2Sz9U3ckDNfvgmhuccFwu58lkeeBAcLTw==:27n-h0sqTHqhfsvkx8lPsfFotyMCtbreITyciiR087UtbUX2Gln/u3uk3RUIiryivofipRsTet7UBnHp5JuNcz7mCsPqivOiAdsv1Yog2uo=; Expires=Sun, 29-Nov-26 00:23:16 GMT; Path=/
+access-control-allow-origin: *
+etag: W/"3a3-TLYtj6zpB0MkeSmAbYfkgXdPcUU"
+content-security-policy: upgrade-insecure-requests
+permissions-policy: join-ad-interest-group=(), run-ad-auction=(), browsing-topics=()
+fastly-restarts: 1
+accept-ranges: bytes
+date: Sat, 29 Nov 2025 00:23:21 GMT
+age: 4
+set-cookie: _pxhd=Ptvkj6WsoLonakY8C5n4Vu/duDailtu3rZWiVULWqsVolwQAs2i65GAJefzgJZFAPt9lVF3Jtpc9SGIeAorYjg==:97QEry9Lsy3Y0y47YGGY3KZYsuTm7aKqqEoz6ic5jLnmMPVbSAuwADdvaypU1M-0bOhOmvMbFXpYMasl-ewIYPO98AN3kiJVN6ksaLYngHw=; Secure; Max-Age=31536000; path=/; SameSite=Lax
+x-content-type-options: nosniff
+x-served-by: cache-mel11234-MEL
+x-cache: HIT
+x-cache-hits: 1
+strict-transport-security: max-age=31557600
+set-cookie: session_id=019accfe-2cac-718f-9157-54b827ee72c2; path=/; max-age=31536000; domain=bloomberg.com; secure
+set-cookie: _session_id_backup=019accfe-2cac-718f-9157-54b827ee72c2; path=/; max-age=31536000; domain=bloomberg.com; secure
+set-cookie: agent_id=019accfe-2cac-74ba-a7a1-9778f0fe3710; path=/; max-age=31536000; domain=bloomberg.com; secure
+set-cookie: session_key=b450dc2c9966d9d46232bcdd69bb619c3e6c1a85; path=/; max-age=31536000; domain=bloomberg.com; secure
+cache-control: no-store
+vary: Accept-Encoding
+alt-svc: h3=":443";ma=86400,h3-29=":443";ma=86400,h3-27=":443";ma=86400
+content-length: 931
+

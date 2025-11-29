@@ -1,0 +1,125 @@
+/* -------------------- */
+/*        BASE          */
+/* -------------------- */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.2s, color 0.2s;
+}
+
+:root {
+    --bg: #f2f2f2;
+    --card: #ffffff;
+    --text: #333;
+    --border: #ccc;
+    --btn: #0077ff;
+    --btn-hover: #005fcc;
+    --secondary: #555;
+}
+
+body.dark {
+    --bg: #1a1a1a;
+    --card: #292929;
+    --text: #e6e6e6;
+    --border: #444;
+    --btn: #3b82f6;
+    --btn-hover: #2563eb;
+    --secondary: #bbbbbb;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+section {
+    background: var(--card);
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+
+/* -------------------- */
+/*       BUTTONS        */
+/* -------------------- */
+
+button {
+    padding: 10px 16px;
+    border: none;
+    background: var(--btn);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--btn-hover);
+}
+
+.secondary-btn {
+    background: var(--secondary);
+}
+
+.accent-btn {
+    background: #ff3b30;
+}
+
+.accent-btn:hover {
+    background: #cc2c24;
+}
+
+
+/* -------------------- */
+/*       STREAM TABLE   */
+/* -------------------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+}
+
+.status-online {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+.status-offline {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.quality-good { color: #22c55e; }
+.quality-degraded { color: #f97316; }
+.quality-stalled { color: #ef4444; }
+
+
+/* -------------------- */
+/*       LOG VIEWER     */
+/* -------------------- */
+
+.log-box {
+    background: #111;
+    color: #0f0;
+    padding: 15px;
+    height: 260px;
+    overflow-y: scroll;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+body.dark .log-box {
+    background: #000;
+}

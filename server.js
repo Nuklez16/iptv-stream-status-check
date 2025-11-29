@@ -1,0 +1,128 @@
+// server.js — API + Static
+const path = require("path");
+const express = require("express");
+
+const { query } = require("./db");
+
+const {
+    getSettings,
+    updateSettings,
+    minutesToCron
+} = require("./settings");
+
+const { runStatusCheckJob } = require("./statusJob");
+
+function createServer(app, scheduleStatusCheck) {
+    app.use(express.json());
+
+    // Static public folder
+    const publicDir = path.join(__dirname, "public");
+    app.use("/", express.static(publicDir));
+
+    // STREAM ROUTES ----------------------
+
+    app.get("/api/streams", async (req, res) => {
+        try {
+            const rows = await query(
+                "SELECT id, name, url, status, quality, tvg_id, tvg_chno, tvg_logo, tvg_name FROM streams ORDER BY id DESC"
+            );
+            res.json(rows);
+        } catch (err) {
+            res.status(500).json({ message: "DB error" });
+        }
+    });
+
+    app.post("/api/streams", async (req, res) => {
+        const {
+            name,
+            url,
+            tvg_id,
+            tvg_chno,
+            tvg_logo,
+            tvg_name
+        } = req.body;
+
+        if (!url || !url.trim()) {
+            return res.status(400).json({ message: "URL required" });
+        }
+
+        const newStream = {
+            name: name?.trim() || null,
+            url: url.trim(),
+            status: "offline",
+            quality: "unverified",
+            tvg_id: tvg_id?.trim() || null,
+            tvg_chno: tvg_chno || null,
+            tvg_logo: tvg_logo || null,
+            tvg_name: tvg_name || name || null
+        };
+
+        try {
+            const result = await query("INSERT INTO streams SET ?", newStream);
+            res.status(201).json({ id: result.insertId, ...newStream });
+        } catch (err) {
+            res.status(500).json({ message: "DB error" });
+        }
+    });
+
+    app.delete("/api/streams/:id", async (req, res) => {
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id)) {
+            return res.status(400).json({ message: "Invalid ID" });
+        }
+
+        try {
+            const result = await query("DELETE FROM streams WHERE id=?", [id]);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: "Not found" });
+            }
+
+            res.json({ message: "Deleted" });
+        } catch (err) {
+            res.status(500).json({ message: "DB error" });
+        }
+    });
+
+    // SETTINGS ----------------------
+
+    app.get("/api/settings", (req, res) => {
+        const s = getSettings();
+        res.json({
+            frequencyMinutes: s.frequencyMinutes,
+            cronExpression: minutesToCron(s.frequencyMinutes)
+        });
+    });
+
+    app.post("/api/settings", (req, res) => {
+        const { frequencyMinutes } = req.body;
+
+        try {
+            const newSettings = updateSettings(frequencyMinutes);
+            scheduleStatusCheck(newSettings.frequencyMinutes);
+
+            res.json({
+                message: "Settings updated",
+                frequencyMinutes: newSettings.frequencyMinutes,
+                cronExpression: minutesToCron(newSettings.frequencyMinutes)
+            });
+
+        } catch (err) {
+            res.status(err.statusCode || 400).json({ message: err.message });
+        }
+    });
+
+    // MANUAL RUN ----------------------
+
+    app.post("/api/run-check", async (req, res) => {
+        runStatusCheckJob().then(() => {
+            res.json({ message: "Manual check complete." });
+        });
+    });
+
+    console.log("Web dashboard API ready.");
+}
+
+module.exports = {
+    createServer
+};
