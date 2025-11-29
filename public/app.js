@@ -3,6 +3,8 @@
 // ==========================
 const socket = io();
 let playlistDownloadUrl = null;
+let streamsState = [];
+let editingStreamId = null;
 
 // Log live status changes
 socket.on("log", (line) => {
@@ -27,6 +29,7 @@ socket.on("job-complete", (payload) => {
     }
 
     updatePlaylistDetails(payload);
+    loadPlaylistPreview();
 });
 
 function appendLog(text) {
@@ -58,7 +61,8 @@ if (localStorage.getItem("darkMode") === "true") {
 async function fetchStreams() {
     const res = await fetch("/api/streams");
     const streams = await res.json();
-    renderStreams(streams);
+    streamsState = streams;
+    renderStreams(streamsState);
 }
 
 async function importStreams() {
@@ -139,33 +143,112 @@ function renderImportSummary(summary) {
     });
 }
 
-function renderStreams(streams) {
+function renderStreams(streams = streamsState) {
     const tbody = document.querySelector("#streamsTable tbody");
     tbody.innerHTML = "";
 
     streams.forEach(stream => {
+        const isEditing = editingStreamId === stream.id;
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${stream.id}</td>
-            <td>${stream.name || ""}</td>
-            <td class="status-${stream.status}">${stream.status}</td>
-            <td class="quality-${stream.quality}">${stream.quality}</td>
-            <td>${stream.url}</td>
-            <td>${stream.tvg_name || ""}</td>
-            <td>${stream.tvg_chno || ""}</td>
-            <td><button class="delete-btn" data-id="${stream.id}">Delete</button></td>
-        `;
+        tr.dataset.id = stream.id;
+
+        if (isEditing) {
+            tr.innerHTML = `
+                <td>${stream.id}</td>
+                <td><input class="cell-input" data-field="name" value="${stream.name || ""}" /></td>
+                <td class="status-${stream.status}">${stream.status}</td>
+                <td class="quality-${stream.quality}">${stream.quality}</td>
+                <td><input class="cell-input" data-field="url" value="${stream.url}" /></td>
+                <td><input class="cell-input" data-field="tvg_name" value="${stream.tvg_name || ""}" /></td>
+                <td><input class="cell-input" data-field="tvg_id" value="${stream.tvg_id || ""}" /></td>
+                <td><input class="cell-input" data-field="tvg_chno" type="number" value="${stream.tvg_chno || ""}" /></td>
+                <td><input class="cell-input" data-field="tvg_logo" value="${stream.tvg_logo || ""}" /></td>
+                <td class="actions-cell">
+                    <button class="save-btn" data-id="${stream.id}">Save</button>
+                    <button class="secondary-btn cancel-btn" data-id="${stream.id}">Cancel</button>
+                </td>
+            `;
+        } else {
+            tr.innerHTML = `
+                <td>${stream.id}</td>
+                <td>${stream.name || ""}</td>
+                <td class="status-${stream.status}">${stream.status}</td>
+                <td class="quality-${stream.quality}">${stream.quality}</td>
+                <td>${stream.url}</td>
+                <td>${stream.tvg_name || ""}</td>
+                <td>${stream.tvg_id || ""}</td>
+                <td>${stream.tvg_chno || ""}</td>
+                <td class="logo-cell">${stream.tvg_logo ? `<img src="${stream.tvg_logo}" alt="${stream.tvg_name || stream.name || "logo"}" class="table-logo" />` : "<span class=\"tiny\">No logo</span>"}</td>
+                <td class="actions-cell">
+                    <button class="secondary-btn edit-btn" data-id="${stream.id}">Edit</button>
+                    <button class="delete-btn" data-id="${stream.id}">Delete</button>
+                </td>
+            `;
+        }
         tbody.appendChild(tr);
     });
 
     document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.addEventListener("click", () => deleteStream(btn.dataset.id));
     });
+
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => startEditStream(btn.dataset.id));
+    });
+
+    document.querySelectorAll(".save-btn").forEach(btn => {
+        btn.addEventListener("click", () => saveStreamEdit(btn.dataset.id));
+    });
+
+    document.querySelectorAll(".cancel-btn").forEach(btn => {
+        btn.addEventListener("click", () => cancelEdit());
+    });
 }
 
 async function deleteStream(id) {
     if (!confirm("Delete stream " + id + "?")) return;
+    editingStreamId = null;
     await fetch(`/api/streams/${id}`, { method: "DELETE" });
+    await fetchStreams();
+}
+
+function startEditStream(id) {
+    editingStreamId = Number(id);
+    renderStreams();
+}
+
+function cancelEdit() {
+    editingStreamId = null;
+    renderStreams();
+}
+
+async function saveStreamEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (!row) return;
+
+    const payload = {
+        name: row.querySelector('[data-field="name"]').value,
+        url: row.querySelector('[data-field="url"]').value,
+        tvg_name: row.querySelector('[data-field="tvg_name"]').value,
+        tvg_id: row.querySelector('[data-field="tvg_id"]').value,
+        tvg_chno: row.querySelector('[data-field="tvg_chno"]').value,
+        tvg_logo: row.querySelector('[data-field="tvg_logo"]').value,
+    };
+
+    const res = await fetch(`/api/streams/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data?.message || "Failed to update stream");
+        return;
+    }
+
+    editingStreamId = null;
     await fetchStreams();
 }
 
@@ -266,6 +349,64 @@ async function loadPlaylistInfo() {
     }
 }
 
+async function loadPlaylistPreview() {
+    const statusEl = document.getElementById("playlistEmptyMessage");
+    const listEl = document.getElementById("playlistChannels");
+
+    listEl.innerHTML = "";
+    statusEl.textContent = "Loading playlist...";
+
+    try {
+        const res = await fetch("/api/playlist/channels");
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data?.message || "Unable to load playlist");
+        }
+
+        renderPlaylistChannels(data.channels || []);
+    } catch (err) {
+        statusEl.textContent = err.message;
+    }
+}
+
+function renderPlaylistChannels(channels) {
+    const listEl = document.getElementById("playlistChannels");
+    const statusEl = document.getElementById("playlistEmptyMessage");
+
+    listEl.innerHTML = "";
+
+    if (!channels?.length) {
+        statusEl.textContent = "Playlist not generated yet or empty.";
+        return;
+    }
+
+    statusEl.textContent = `${channels.length} channels in current playlist.`;
+
+    channels.forEach(channel => {
+        const channelEl = document.createElement("div");
+        channelEl.className = "playlist-channel";
+
+        const safeTitle = channel.tvg_name || channel.name || "Untitled Channel";
+        const metaParts = [];
+        if (channel.tvg_id) metaParts.push(`ID: ${channel.tvg_id}`);
+        if (channel.tvg_chno) metaParts.push(`CH ${channel.tvg_chno}`);
+
+        channelEl.innerHTML = `
+            <div class="playlist-channel-header">
+                <div>
+                    <div class="playlist-channel-title">${safeTitle}</div>
+                    <div class="playlist-channel-meta">${metaParts.join(" • ") || "No metadata"}</div>
+                </div>
+                ${channel.tvg_logo ? `<img src="${channel.tvg_logo}" alt="${safeTitle}" class="playlist-channel-logo" />` : ""}
+            </div>
+            <div class="playlist-channel-url" title="${channel.url}">${channel.url}</div>
+        `;
+
+        listEl.appendChild(channelEl);
+    });
+}
+
 
 // ==========================
 //  RUN CHECK NOW
@@ -295,6 +436,7 @@ document.getElementById("refreshBtn").addEventListener("click", fetchStreams);
 document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
 document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
 document.getElementById("importBtn").addEventListener("click", importStreams);
+document.getElementById("refreshPlaylistPreviewBtn").addEventListener("click", loadPlaylistPreview);
 
 
 // ==========================
@@ -303,3 +445,4 @@ document.getElementById("importBtn").addEventListener("click", importStreams);
 fetchStreams();
 loadSettings();
 loadPlaylistInfo();
+loadPlaylistPreview();

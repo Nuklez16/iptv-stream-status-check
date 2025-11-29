@@ -60,6 +60,15 @@
         </div>
     </section>
 
+    <section class="playlist-preview-card">
+        <div class="section-header">
+            <h2>Playlist Preview</h2>
+            <button id="refreshPlaylistPreviewBtn" class="refresh-btn">Refresh</button>
+        </div>
+        <p id="playlistEmptyMessage" class="tiny">Generate the playlist to see the channels.</p>
+        <div id="playlistChannels" class="playlist-grid"></div>
+    </section>
+
     <!-- Import Playlist -->
     <section class="import-card">
         <div class="import-header">
@@ -88,7 +97,9 @@
                     <th>Quality</th>
                     <th>URL</th>
                     <th>tvg-name</th>
+                    <th>tvg-id</th>
                     <th>tvg-chno</th>
+                    <th>tvg-logo</th>
                     <th>Actions</th>
                 </tr>
             </thead>

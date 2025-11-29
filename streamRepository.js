@@ -2,6 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const { query } = require("./db");
+const { parseM3U } = require("./m3uParser");
 
 const PLAYLIST_FILENAME = "output.m3u";
 const PLAYLIST_PATH = path.join(__dirname, "public", PLAYLIST_FILENAME);
@@ -83,11 +84,21 @@ function getPlaylistInfo() {
     }
 }
 
+function getPlaylistChannels() {
+    if (!fs.existsSync(PLAYLIST_PATH)) {
+        return [];
+    }
+
+    const content = fs.readFileSync(PLAYLIST_PATH, "utf-8");
+    return parseM3U(content);
+}
+
 module.exports = {
     fetchStreamsFromDatabase,
     updateStreamStatus,
     generateM3UPlaylist,
     getPlaylistInfo,
+    getPlaylistChannels,
     PLAYLIST_PATH,
     PLAYLIST_FILENAME,
 };
