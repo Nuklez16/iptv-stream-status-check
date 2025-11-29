@@ -58,6 +58,7 @@ function sleep(ms) {
 // ----------------------------
 async function checkStreamStatusAndUpdate(streams) {
   const offline = [];
+  let hadStatusChange = false;
 
   for (const stream of streams) {
     log(`Checking stream ${stream.id}: ${stream.url}`);
@@ -81,6 +82,7 @@ async function checkStreamStatusAndUpdate(streams) {
         const line = `${update.name} - ${update.status} (${update.quality})`;
         log(`Status changed: ${line}`);
         statusChanges.push(line);
+        hadStatusChange = true;
         broadcastStreamUpdate();
       }
 
@@ -95,14 +97,18 @@ async function checkStreamStatusAndUpdate(streams) {
     await sleep(15000);
   }
 
-  await retryOfflineStreams(offline);
+  const retryChange = await retryOfflineStreams(offline);
+
+  return { hadStatusChange: hadStatusChange || retryChange };
 }
 
 // ----------------------------
 // Retry offline streams once
 // ----------------------------
 async function retryOfflineStreams(offlineStreams) {
-  if (!offlineStreams.length) return;
+  if (!offlineStreams.length) return false;
+
+  let hadStatusChange = false;
 
   log(`Retrying ${offlineStreams.length} offline streams...`);
 
@@ -128,6 +134,7 @@ async function retryOfflineStreams(offlineStreams) {
         const line = `${update.name} - ${update.status} (${update.quality})`;
         log(`Status changed (retry): ${line}`);
         statusChanges.push(line);
+        hadStatusChange = true;
         broadcastStreamUpdate();
       }
     } catch (err) {
@@ -135,8 +142,7 @@ async function retryOfflineStreams(offlineStreams) {
     }
   }
 
-  await generateM3UPlaylist();
-  log("M3U playlist regenerated.");
+  return hadStatusChange;
 }
 
 // ----------------------------
@@ -145,10 +151,12 @@ async function retryOfflineStreams(offlineStreams) {
 async function fetchAndCheckStreams() {
   try {
     const streams = await fetchStreamsFromDatabase();
-    await checkStreamStatusAndUpdate(streams);
+    return await checkStreamStatusAndUpdate(streams);
   } catch (err) {
     log(`Fetch error: ${err.message}`);
   }
+
+  return { hadStatusChange: false };
 }
 
 // ----------------------------
@@ -166,7 +174,14 @@ async function runStatusCheckJob() {
   log("=== Status Check Started ===");
 
   try {
-    await fetchAndCheckStreams();
+    const { hadStatusChange } = await fetchAndCheckStreams();
+
+    if (hadStatusChange) {
+      await generateM3UPlaylist();
+      log("M3U playlist regenerated.");
+    } else {
+      log("No status changes detected; playlist unchanged.");
+    }
 
     if (process.env.ENABLE_EMAIL === "true" && statusChanges.length > 0) {
       await sendEmail(statusChanges);
