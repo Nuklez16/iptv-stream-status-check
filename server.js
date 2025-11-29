@@ -3,6 +3,7 @@ const path = require("path");
 const express = require("express");
 
 const { query } = require("./db");
+const { parseM3UContent } = require("./m3uParser");
 
 const {
     getSettings,
@@ -14,7 +15,7 @@ const { runStatusCheckJob } = require("./statusJob");
 const { getPlaylistInfo, PLAYLIST_PATH, PLAYLIST_FILENAME } = require("./streamRepository");
 
 function createServer(app, scheduleStatusCheck) {
-    app.use(express.json());
+    app.use(express.json({ limit: "2mb" }));
 
     // Static public folder
     const publicDir = path.join(__dirname, "public");
@@ -61,6 +62,66 @@ function createServer(app, scheduleStatusCheck) {
         try {
             const result = await query("INSERT INTO streams SET ?", newStream);
             res.status(201).json({ id: result.insertId, ...newStream });
+        } catch (err) {
+            res.status(500).json({ message: "DB error" });
+        }
+    });
+
+    app.post("/api/streams/import", async (req, res) => {
+        const { m3uContent } = req.body;
+
+        if (!m3uContent || typeof m3uContent !== "string") {
+            return res.status(400).json({ message: "m3uContent is required" });
+        }
+
+        let parsedEntries = [];
+        try {
+            parsedEntries = parseM3UContent(m3uContent);
+        } catch (err) {
+            return res.status(400).json({ message: err.message || "Invalid M3U" });
+        }
+
+        if (!parsedEntries.length) {
+            return res.status(400).json({ message: "No playable entries found in the playlist" });
+        }
+
+        try {
+            const existing = await query("SELECT url FROM streams");
+            const urlSet = new Set(existing.map(r => r.url));
+
+            let imported = 0;
+            let skipped = 0;
+
+            for (const entry of parsedEntries) {
+                const normalizedUrl = entry.url?.trim();
+                if (!normalizedUrl || urlSet.has(normalizedUrl)) {
+                    skipped++;
+                    continue;
+                }
+
+                urlSet.add(normalizedUrl);
+
+                const newStream = {
+                    name: entry.name || entry.tvg_name || null,
+                    url: normalizedUrl,
+                    status: "offline",
+                    quality: "unverified",
+                    tvg_id: entry.tvg_id || null,
+                    tvg_chno: entry.tvg_chno || null,
+                    tvg_logo: entry.tvg_logo || null,
+                    tvg_name: entry.tvg_name || entry.name || null,
+                };
+
+                await query("INSERT INTO streams SET ?", newStream);
+                imported++;
+            }
+
+            res.status(201).json({
+                message: "Playlist imported",
+                imported,
+                skipped,
+                total: parsedEntries.length,
+            });
         } catch (err) {
             res.status(500).json({ message: "DB error" });
         }

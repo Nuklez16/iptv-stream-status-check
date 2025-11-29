@@ -96,6 +96,46 @@ button:hover {
 
 
 /* -------------------- */
+/*        FORMS        */
+/* -------------------- */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.form-row input {
+    flex: 1;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.import-actions {
+    align-items: center;
+}
+
+
+/* -------------------- */
 /*       STREAM TABLE   */
 /* -------------------- */
 

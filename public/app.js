@@ -121,6 +121,43 @@ function clearForm() {
 
 
 // ==========================
+//  IMPORT M3U
+// ==========================
+async function importM3u() {
+    const m3uText = document.getElementById("m3uInput").value.trim();
+    const resultEl = document.getElementById("importResult");
+
+    if (!m3uText) {
+        resultEl.textContent = "Paste your playlist first.";
+        return;
+    }
+
+    resultEl.textContent = "Importing...";
+
+    try {
+        const res = await fetch("/api/streams/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ m3uContent: m3uText }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            resultEl.textContent = data.message || "Failed to import playlist.";
+            return;
+        }
+
+        resultEl.textContent = `${data.imported} added, ${data.skipped} skipped (total ${data.total}).`;
+        document.getElementById("m3uInput").value = "";
+        fetchStreams();
+    } catch (err) {
+        resultEl.textContent = err.message;
+    }
+}
+
+
+// ==========================
 //  SETTINGS
 // ==========================
 async function loadSettings() {
@@ -216,6 +253,7 @@ document.getElementById("addStreamBtn").addEventListener("click", addStream);
 document.getElementById("refreshBtn").addEventListener("click", fetchStreams);
 document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
 document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
+document.getElementById("importM3uBtn").addEventListener("click", importM3u);
 
 
 // ==========================

@@ -60,6 +60,18 @@
         </div>
     </section>
 
+    <section class="import-card">
+        <h2>Bulk Import from M3U</h2>
+        <p class="small">Paste the contents of a playlist and we will extract the name, logo and URL for each stream.</p>
+
+        <textarea id="m3uInput" rows="6" placeholder="#EXTM3U\n#EXTINF:-1 tvg-id=&quot;&quot; tvg-name=&quot;Channel&quot; tvg-logo=&quot;https://...&quot;,Channel Name\nhttp://example.com/playlist"></textarea>
+
+        <div class="form-row import-actions">
+            <button id="importM3uBtn">Import Playlist</button>
+            <span id="importResult" class="tiny"></span>
+        </div>
+    </section>
+
     <!-- Streams Table -->
     <section class="streams-card">
         <h2>Streams</h2>
