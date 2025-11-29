@@ -11,7 +11,7 @@ const {
 } = require("./settings");
 
 const { runStatusCheckJob } = require("./statusJob");
-const { getPlaylistInfo, PLAYLIST_PATH, PLAYLIST_FILENAME } = require("./streamRepository");
+const { getPlaylistInfo, PLAYLIST_PATH, PLAYLIST_FILENAME, getPlaylistChannels } = require("./streamRepository");
 const { parseM3U } = require("./m3uParser");
 
 function createServer(app, scheduleStatusCheck) {
@@ -192,6 +192,26 @@ function createServer(app, scheduleStatusCheck) {
             filename: info.filename,
             downloadUrl: info.exists ? "/api/playlist/download" : null,
         });
+    });
+
+    app.get("/api/playlist/channels", (req, res) => {
+        const info = getPlaylistInfo();
+
+        if (!info.exists) {
+            return res.status(404).json({ message: "Playlist not generated yet." });
+        }
+
+        try {
+            const channels = getPlaylistChannels();
+            res.json({
+                filename: info.filename,
+                updatedAt: info.updatedAt,
+                count: channels.length,
+                channels,
+            });
+        } catch (err) {
+            res.status(500).json({ message: "Failed to read playlist." });
+        }
     });
 
     app.get("/api/playlist/download", (req, res) => {
