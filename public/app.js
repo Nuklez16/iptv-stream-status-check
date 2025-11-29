@@ -2,6 +2,7 @@
 //  WEBSOCKET LIVE UPDATES
 // ==========================
 const socket = io();
+let playlistDownloadUrl = null;
 
 // Log live status changes
 socket.on("log", (line) => {
@@ -11,6 +12,21 @@ socket.on("log", (line) => {
 // Live stream status update
 socket.on("stream-update", () => {
     fetchStreams();
+});
+
+socket.on("job-progress", (payload) => {
+    if (payload?.stage === "started") {
+        appendLog("--- Status check started ---");
+    }
+});
+
+socket.on("job-complete", (payload) => {
+    appendLog("--- Status check completed ---");
+    if (payload?.changes?.length) {
+        appendLog(`Changes: ${payload.changes.join(", ")}`);
+    }
+
+    updatePlaylistDetails(payload);
 });
 
 function appendLog(text) {
@@ -130,6 +146,48 @@ async function saveSettings() {
     loadSettings();
 }
 
+// ==========================
+//  PLAYLIST INFO
+// ==========================
+function updatePlaylistDetails(info) {
+    const statusEl = document.getElementById("playlistStatus");
+    const metaEl = document.getElementById("playlistMeta");
+    const downloadBtn = document.getElementById("downloadPlaylistBtn");
+
+    const available = info?.playlistAvailable ?? info?.exists;
+    const filename = info?.playlistFilename ?? info?.filename ?? "output.m3u";
+    const updatedAt = info?.playlistUpdatedAt ?? info?.updatedAt;
+    const size = info?.playlistSize ?? info?.size;
+
+    if (available) {
+        statusEl.textContent = `Current playlist: ${filename}`;
+        if (updatedAt) {
+            const updatedDate = new Date(updatedAt);
+            metaEl.textContent = `Last updated: ${updatedDate.toLocaleString()} (${Math.round((size || 0) / 1024)} KB)`;
+        } else {
+            metaEl.textContent = "";
+        }
+
+        playlistDownloadUrl = info?.downloadUrl || "/api/playlist/download";
+        downloadBtn.disabled = false;
+    } else {
+        statusEl.textContent = "Playlist not generated yet.";
+        metaEl.textContent = "";
+        playlistDownloadUrl = null;
+        downloadBtn.disabled = true;
+    }
+}
+
+async function loadPlaylistInfo() {
+    try {
+        const res = await fetch("/api/playlist");
+        const info = await res.json();
+        updatePlaylistDetails(info);
+    } catch (err) {
+        appendLog(`Playlist info error: ${err.message}`);
+    }
+}
+
 
 // ==========================
 //  RUN CHECK NOW
@@ -141,6 +199,15 @@ document.getElementById("runCheckNowBtn").addEventListener("click", async () => 
     appendLog(data.message);
 });
 
+function downloadPlaylist() {
+    if (!playlistDownloadUrl) {
+        alert("Playlist not available yet. Run a check to generate it.");
+        return;
+    }
+
+    window.location.href = playlistDownloadUrl;
+}
+
 
 // ==========================
 //  HOOK BUTTONS
@@ -148,6 +215,7 @@ document.getElementById("runCheckNowBtn").addEventListener("click", async () => 
 document.getElementById("addStreamBtn").addEventListener("click", addStream);
 document.getElementById("refreshBtn").addEventListener("click", fetchStreams);
 document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
+document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
 
 
 // ==========================
@@ -155,3 +223,4 @@ document.getElementById("saveSettingsBtn").addEventListener("click", saveSetting
 // ==========================
 fetchStreams();
 loadSettings();
+loadPlaylistInfo();

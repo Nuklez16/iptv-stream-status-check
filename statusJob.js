@@ -10,6 +10,7 @@ const {
   fetchStreamsFromDatabase,
   updateStreamStatus,
   generateM3UPlaylist,
+  getPlaylistInfo,
 } = require("./streamRepository");
 
 const { minutesToCron } = require("./settings");
@@ -30,6 +31,14 @@ function log(message) {
 
   try {
     getIO().emit("log", line);
+  } catch {
+    // Socket may not be ready during very early startup
+  }
+}
+
+function emitJobEvent(event, payload) {
+  try {
+    getIO().emit(event, payload);
   } catch {
     // Socket may not be ready during very early startup
   }
@@ -106,7 +115,10 @@ async function checkStreamStatusAndUpdate(streams) {
 // Retry offline streams once
 // ----------------------------
 async function retryOfflineStreams(offlineStreams) {
-  if (!offlineStreams.length) return false;
+  if (!offlineStreams.length) {
+    log("No offline streams detected; skipping retry phase.");
+    return false;
+  }
 
   let hadStatusChange = false;
 
@@ -150,7 +162,10 @@ async function retryOfflineStreams(offlineStreams) {
 // ----------------------------
 async function fetchAndCheckStreams() {
   try {
+    log("Fetching streams from database...");
     const streams = await fetchStreamsFromDatabase();
+    log(`Fetched ${streams.length} streams to evaluate.`);
+
     return await checkStreamStatusAndUpdate(streams);
   } catch (err) {
     log(`Fetch error: ${err.message}`);
@@ -172,13 +187,14 @@ async function runStatusCheckJob() {
   statusChanges.length = 0;
 
   log("=== Status Check Started ===");
+  emitJobEvent("job-progress", { stage: "started" });
 
   try {
     const { hadStatusChange } = await fetchAndCheckStreams();
 
     if (hadStatusChange) {
       await generateM3UPlaylist();
-      log("M3U playlist regenerated.");
+      log("M3U playlist regenerated and saved.");
     } else {
       log("No status changes detected; playlist unchanged.");
     }
@@ -192,6 +208,17 @@ async function runStatusCheckJob() {
   } catch (err) {
     log(`Job Error: ${err.message}`);
   } finally {
+    const playlistInfo = getPlaylistInfo();
+
+    emitJobEvent("job-complete", {
+      stage: "completed",
+      playlistAvailable: playlistInfo.exists,
+      playlistUpdatedAt: playlistInfo.updatedAt,
+      playlistSize: playlistInfo.size,
+      playlistFilename: playlistInfo.filename,
+      changes: [...statusChanges],
+    });
+
     log("=== Status Check Completed ===");
     isStatusCheckRunning = false;
   }

@@ -3,6 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const { query } = require("./db");
 
+const PLAYLIST_FILENAME = "output.m3u";
+const PLAYLIST_PATH = path.join(__dirname, "public", PLAYLIST_FILENAME);
+
 // Fetch all streams
 async function fetchStreamsFromDatabase() {
     return await query("SELECT id, url, name FROM streams");
@@ -55,14 +58,36 @@ async function generateM3UPlaylist() {
         m3u += `${r.url}\n`;
     }
 
-    const file = "/root/app/output.m3u";
-    fs.writeFileSync(file, m3u);
+    fs.writeFileSync(PLAYLIST_PATH, m3u);
 
-    return file;
+    return PLAYLIST_PATH;
+}
+
+function getPlaylistInfo() {
+    try {
+        const stats = fs.statSync(PLAYLIST_PATH);
+
+        return {
+            exists: true,
+            updatedAt: stats.mtime,
+            size: stats.size,
+            filename: PLAYLIST_FILENAME,
+        };
+    } catch {
+        return {
+            exists: false,
+            updatedAt: null,
+            size: 0,
+            filename: PLAYLIST_FILENAME,
+        };
+    }
 }
 
 module.exports = {
     fetchStreamsFromDatabase,
     updateStreamStatus,
-    generateM3UPlaylist
+    generateM3UPlaylist,
+    getPlaylistInfo,
+    PLAYLIST_PATH,
+    PLAYLIST_FILENAME,
 };
