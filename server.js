@@ -12,6 +12,7 @@ const {
 
 const { runStatusCheckJob } = require("./statusJob");
 const { getPlaylistInfo, PLAYLIST_PATH, PLAYLIST_FILENAME } = require("./streamRepository");
+const { parseM3U } = require("./m3uParser");
 
 function createServer(app, scheduleStatusCheck) {
     app.use(express.json());
@@ -28,6 +29,73 @@ function createServer(app, scheduleStatusCheck) {
                 "SELECT id, name, url, status, quality, tvg_id, tvg_chno, tvg_logo, tvg_name FROM streams ORDER BY id DESC"
             );
             res.json(rows);
+        } catch (err) {
+            res.status(500).json({ message: "DB error" });
+        }
+    });
+
+    app.post("/api/streams/import", async (req, res) => {
+        const playlistContent = req.body?.content || req.body?.m3u || "";
+
+        if (!playlistContent.trim()) {
+            return res.status(400).json({ message: "No playlist content provided" });
+        }
+
+        const entries = parseM3U(playlistContent);
+
+        if (!entries.length) {
+            return res.status(400).json({ message: "No valid entries found" });
+        }
+
+        try {
+            const values = entries.map(entry => [
+                entry.name || entry.tvg_name,
+                entry.url,
+                "offline",
+                "unverified",
+                entry.tvg_id,
+                entry.tvg_chno,
+                entry.tvg_logo,
+                entry.tvg_name || entry.name
+            ]);
+
+            await query(
+                "INSERT INTO streams (name, url, status, quality, tvg_id, tvg_chno, tvg_logo, tvg_name) VALUES ?",
+                [values]
+            );
+
+            const rollups = entries.reduce((acc, entry) => {
+                const groupName = entry.group_title || "Ungrouped";
+                if (!acc[groupName]) {
+                    acc[groupName] = {
+                        name: groupName,
+                        count: 0,
+                        logoCount: 0,
+                        samples: [],
+                    };
+                }
+
+                const group = acc[groupName];
+                group.count += 1;
+                if (entry.tvg_logo) group.logoCount += 1;
+
+                if (group.samples.length < 3) {
+                    group.samples.push({
+                        name: entry.tvg_name || entry.name || "Unnamed",
+                        logo: entry.tvg_logo || null,
+                    });
+                }
+
+                return acc;
+            }, {});
+
+            const logoCount = entries.filter(e => e.tvg_logo).length;
+
+            res.json({
+                imported: entries.length,
+                logoCount,
+                groups: Object.values(rollups)
+            });
         } catch (err) {
             res.status(500).json({ message: "DB error" });
         }
