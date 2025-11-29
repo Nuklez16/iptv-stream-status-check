@@ -45,6 +45,25 @@ section {
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
+.playlist-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.small {
+    color: var(--secondary);
+}
+
+.tiny {
+    color: var(--secondary);
+    font-size: 0.85rem;
+}
+
 
 /* -------------------- */
 /*       BUTTONS        */

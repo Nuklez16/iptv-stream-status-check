@@ -11,6 +11,7 @@ const {
 } = require("./settings");
 
 const { runStatusCheckJob } = require("./statusJob");
+const { getPlaylistInfo, PLAYLIST_PATH, PLAYLIST_FILENAME } = require("./streamRepository");
 
 function createServer(app, scheduleStatusCheck) {
     app.use(express.json());
@@ -110,6 +111,29 @@ function createServer(app, scheduleStatusCheck) {
         } catch (err) {
             res.status(err.statusCode || 400).json({ message: err.message });
         }
+    });
+
+    // PLAYLIST ----------------------
+    app.get("/api/playlist", (req, res) => {
+        const info = getPlaylistInfo();
+
+        res.json({
+            exists: info.exists,
+            updatedAt: info.updatedAt,
+            size: info.size,
+            filename: info.filename,
+            downloadUrl: info.exists ? "/api/playlist/download" : null,
+        });
+    });
+
+    app.get("/api/playlist/download", (req, res) => {
+        const info = getPlaylistInfo();
+
+        if (!info.exists) {
+            return res.status(404).json({ message: "Playlist not generated yet." });
+        }
+
+        res.download(PLAYLIST_PATH, PLAYLIST_FILENAME);
     });
 
     // MANUAL RUN ----------------------
