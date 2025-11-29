@@ -5,6 +5,8 @@ const socket = io();
 let playlistDownloadUrl = null;
 let streamsState = [];
 let editingStreamId = null;
+let logsPaused = false;
+let logBuffer = [];
 
 // Log live status changes
 socket.on("log", (line) => {
@@ -32,28 +34,68 @@ socket.on("job-complete", (payload) => {
     loadPlaylistPreview();
 });
 
-function appendLog(text) {
+function writeLog(text) {
     const logBox = document.getElementById("logOutput");
     logBox.textContent += text + "\n";
-
-    // auto scroll
     logBox.scrollTop = logBox.scrollHeight;
 }
 
+function appendLog(text) {
+    if (logsPaused) {
+        logBuffer.push(text);
+        return;
+    }
+    writeLog(text);
+}
+
+function clearLogs() {
+    document.getElementById("logOutput").textContent = "";
+    logBuffer = [];
+}
+
+function togglePauseLogs() {
+    const button = document.getElementById("pauseLogsBtn");
+    const icon = button.querySelector("i");
+    logsPaused = !logsPaused;
+
+    if (logsPaused) {
+        button.title = "Resume logs";
+        if (icon) icon.className = "fas fa-play";
+    } else {
+        button.title = "Pause logs";
+        if (icon) icon.className = "fas fa-pause";
+        if (logBuffer.length) {
+            logBuffer.forEach(writeLog);
+            logBuffer = [];
+        }
+    }
+}
 
 // ==========================
 //  DARK MODE
 // ==========================
-document.getElementById("darkModeBtn").addEventListener("click", () => {
+const darkModeBtn = document.getElementById("darkModeBtn");
+
+function updateThemeToggleButton() {
+    const isDark = document.body.classList.contains("dark");
+    darkModeBtn.innerHTML = "";
+
+    const icon = document.createElement("i");
+    icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+    darkModeBtn.appendChild(icon);
+    darkModeBtn.appendChild(document.createTextNode(isDark ? " Toggle Light Mode" : " Toggle Dark Mode"));
+}
+
+darkModeBtn.addEventListener("click", () => {
     document.body.classList.toggle("dark");
     localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+    updateThemeToggleButton();
 });
 
-// Load preference on boot
 if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark");
 }
-
+updateThemeToggleButton();
 
 // ==========================
 //  STREAMS
@@ -101,6 +143,7 @@ function renderImportSummary(summary) {
 
     if (!summary?.groups?.length) {
         container.innerHTML = "<p class=\"tiny\">No summary available.</p>";
+        container.classList.add("show");
         return;
     }
 
@@ -141,6 +184,8 @@ function renderImportSummary(summary) {
         groupEl.appendChild(sampleList);
         container.appendChild(groupEl);
     });
+
+    container.classList.add("show");
 }
 
 function renderStreams(streams = streamsState) {
@@ -152,36 +197,47 @@ function renderStreams(streams = streamsState) {
         const tr = document.createElement("tr");
         tr.dataset.id = stream.id;
 
+        const statusBadge = `<span class="status-badge ${stream.status === "online" ? "status-online" : "status-offline"}">\n            <i class="fas fa-${stream.status === "online" ? "check-circle" : "times-circle"}"></i>\n            ${stream.status || "unknown"}\n        </span>`;
+
+        const quality = stream.quality || "unverified";
+        const qualityClass = `quality-${quality}`;
+        const qualityText = quality.charAt(0).toUpperCase() + quality.slice(1);
+        const truncatedUrl = (stream.url || "").length > 40 ? `${stream.url.slice(0, 40)}...` : (stream.url || "");
+        const logoPreview = stream.tvg_logo ? `<span class="small">${stream.tvg_logo.slice(0, 35)}...</span>` : "<span class=\"tiny\">No logo</span>";
+
         if (isEditing) {
             tr.innerHTML = `
                 <td>${stream.id}</td>
-                <td><input class="cell-input" data-field="name" value="${stream.name || ""}" /></td>
-                <td class="status-${stream.status}">${stream.status}</td>
-                <td class="quality-${stream.quality}">${stream.quality}</td>
-                <td><input class="cell-input" data-field="url" value="${stream.url}" /></td>
-                <td><input class="cell-input" data-field="tvg_name" value="${stream.tvg_name || ""}" /></td>
-                <td><input class="cell-input" data-field="tvg_id" value="${stream.tvg_id || ""}" /></td>
-                <td><input class="cell-input" data-field="tvg_chno" type="number" value="${stream.tvg_chno || ""}" /></td>
-                <td><input class="cell-input" data-field="tvg_logo" value="${stream.tvg_logo || ""}" /></td>
-                <td class="actions-cell">
-                    <button class="save-btn" data-id="${stream.id}">Save</button>
-                    <button class="secondary-btn cancel-btn" data-id="${stream.id}">Cancel</button>
+                <td><input class="inline-input" data-field="name" value="${stream.name || ""}" /></td>
+                <td>${statusBadge}</td>
+                <td><span class="${qualityClass}">${qualityText}</span></td>
+                <td><input class="inline-input" data-field="url" value="${stream.url}" /></td>
+                <td><input class="inline-input" data-field="tvg_name" value="${stream.tvg_name || ""}" /></td>
+                <td><input class="inline-input" data-field="tvg_id" value="${stream.tvg_id || ""}" /></td>
+                <td><input class="inline-input" data-field="tvg_chno" type="number" value="${stream.tvg_chno || ""}" /></td>
+                <td><input class="inline-input" data-field="tvg_logo" value="${stream.tvg_logo || ""}" /></td>
+                <td class="action-buttons">
+                    <button class="btn-primary save-btn" data-id="${stream.id}"><i class="fas fa-save"></i> Save</button>
+                    <button class="btn-secondary cancel-btn" data-id="${stream.id}"><i class="fas fa-times"></i> Cancel</button>
                 </td>
             `;
         } else {
             tr.innerHTML = `
                 <td>${stream.id}</td>
                 <td>${stream.name || ""}</td>
-                <td class="status-${stream.status}">${stream.status}</td>
-                <td class="quality-${stream.quality}">${stream.quality}</td>
-                <td>${stream.url}</td>
+                <td>${statusBadge}</td>
+                <td><span class="${qualityClass}">${qualityText}</span></td>
+                <td class="small" title="${stream.url || ""}">${truncatedUrl}</td>
                 <td>${stream.tvg_name || ""}</td>
                 <td>${stream.tvg_id || ""}</td>
                 <td>${stream.tvg_chno || ""}</td>
-                <td class="logo-cell">${stream.tvg_logo ? `<img src="${stream.tvg_logo}" alt="${stream.tvg_name || stream.name || "logo"}" class="table-logo" />` : "<span class=\"tiny\">No logo</span>"}</td>
-                <td class="actions-cell">
-                    <button class="secondary-btn edit-btn" data-id="${stream.id}">Edit</button>
-                    <button class="delete-btn" data-id="${stream.id}">Delete</button>
+                <td class="logo-cell">${logoPreview}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-outline btn-icon edit-btn" data-id="${stream.id}" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-outline btn-icon delete-btn" data-id="${stream.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                        <button class="btn-outline btn-icon test-btn" data-id="${stream.id}" title="Test stream"><i class="fas fa-play"></i></button>
+                    </div>
                 </td>
             `;
         }
@@ -202,6 +258,10 @@ function renderStreams(streams = streamsState) {
 
     document.querySelectorAll(".cancel-btn").forEach(btn => {
         btn.addEventListener("click", () => cancelEdit());
+    });
+
+    document.querySelectorAll(".test-btn").forEach(btn => {
+        btn.addEventListener("click", () => testStream(btn.dataset.id));
     });
 }
 
@@ -252,7 +312,6 @@ async function saveStreamEdit(id) {
     await fetchStreams();
 }
 
-
 // ==========================
 //  ADD STREAM
 // ==========================
@@ -280,7 +339,6 @@ function clearForm() {
     document.querySelectorAll(".form input").forEach(i => i.value = "");
 }
 
-
 // ==========================
 //  SETTINGS
 // ==========================
@@ -289,8 +347,7 @@ async function loadSettings() {
     const settings = await res.json();
 
     document.getElementById("frequencyInput").value = settings.frequencyMinutes;
-    document.getElementById("cronText").innerText =
-        "Cron Expression: " + settings.cronExpression;
+    document.getElementById("cronText").innerText = formatCronText(settings.frequencyMinutes, settings.cronExpression);
 }
 
 async function saveSettings() {
@@ -305,6 +362,11 @@ async function saveSettings() {
     const data = await res.json();
     alert(data.message);
     loadSettings();
+}
+
+function formatCronText(frequencyMinutes, cronExpression) {
+    if (!frequencyMinutes) return "Not scheduled";
+    return `Every ${frequencyMinutes} minutes (Cron: ${cronExpression})`;
 }
 
 // ==========================
@@ -385,28 +447,25 @@ function renderPlaylistChannels(channels) {
 
     channels.forEach(channel => {
         const channelEl = document.createElement("div");
-        channelEl.className = "playlist-channel";
+        channelEl.className = "channel-card";
 
         const safeTitle = channel.tvg_name || channel.name || "Untitled Channel";
         const metaParts = [];
         if (channel.tvg_id) metaParts.push(`ID: ${channel.tvg_id}`);
         if (channel.tvg_chno) metaParts.push(`CH ${channel.tvg_chno}`);
+        const truncatedUrl = (channel.url || "").length > 60 ? `${channel.url.slice(0, 60)}...` : (channel.url || "");
 
         channelEl.innerHTML = `
-            <div class="playlist-channel-header">
-                <div>
-                    <div class="playlist-channel-title">${safeTitle}</div>
-                    <div class="playlist-channel-meta">${metaParts.join(" • ") || "No metadata"}</div>
-                </div>
-                ${channel.tvg_logo ? `<img src="${channel.tvg_logo}" alt="${safeTitle}" class="playlist-channel-logo" />` : ""}
-            </div>
-            <div class="playlist-channel-url" title="${channel.url}">${channel.url}</div>
+            ${channel.tvg_logo ? `<img src="${channel.tvg_logo}" alt="${safeTitle}" class="channel-logo">` : ""}
+            <div class="channel-name">${safeTitle}</div>
+            <div class="channel-number">${metaParts.join(" • ") || "No metadata"}</div>
+            ${channel.status ? `<span class="status-badge ${channel.status === "online" ? "status-online" : "status-offline"}"><i class="fas fa-${channel.status === "online" ? "check-circle" : "times-circle"}"></i>${channel.status}</span>` : ""}
+            <div class="channel-url" title="${channel.url || ""}">${truncatedUrl}</div>
         `;
 
         listEl.appendChild(channelEl);
     });
 }
-
 
 // ==========================
 //  RUN CHECK NOW
@@ -427,6 +486,25 @@ function downloadPlaylist() {
     window.location.href = playlistDownloadUrl;
 }
 
+async function testStream(id) {
+    appendLog(`Manual test requested for stream ${id}`);
+    try {
+        const res = await fetch("/api/run-check", { method: "POST" });
+        const data = await res.json();
+        appendLog(data.message || "Check triggered.");
+    } catch (err) {
+        appendLog(`Test failed: ${err.message}`);
+    }
+}
+
+function handleFrequencyInput(e) {
+    const value = e.target.value;
+    if (value) {
+        document.getElementById("cronText").textContent = `Every ${value} minutes`;
+    } else {
+        document.getElementById("cronText").textContent = "Not scheduled";
+    }
+}
 
 // ==========================
 //  HOOK BUTTONS
@@ -437,7 +515,9 @@ document.getElementById("saveSettingsBtn").addEventListener("click", saveSetting
 document.getElementById("downloadPlaylistBtn").addEventListener("click", downloadPlaylist);
 document.getElementById("importBtn").addEventListener("click", importStreams);
 document.getElementById("refreshPlaylistPreviewBtn").addEventListener("click", loadPlaylistPreview);
-
+document.getElementById("clearLogsBtn").addEventListener("click", clearLogs);
+document.getElementById("pauseLogsBtn").addEventListener("click", togglePauseLogs);
+document.getElementById("frequencyInput").addEventListener("input", handleFrequencyInput);
 
 // ==========================
 //  INITIAL LOAD
@@ -446,3 +526,4 @@ fetchStreams();
 loadSettings();
 loadPlaylistInfo();
 loadPlaylistPreview();
+appendLog(`[INFO] ${new Date().toLocaleTimeString()} - M3U Stream Checker initialized`);
