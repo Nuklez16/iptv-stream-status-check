@@ -2,120 +2,173 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U Stream Checker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<div class="container">
-
-    <header>
-        <h1>M3U Stream Checker</h1>
-        <p>Monitor, test and manage all your streams in real time.</p>
-        <button id="darkModeBtn" class="secondary-btn">Toggle Dark Mode</button>
-    </header>
-
-    <!-- Settings -->
-    <section class="settings-card">
-        <h2>Checker Settings</h2>
-
-        <div class="settings">
-            <label>Check Frequency (minutes):</label>
-            <input id="frequencyInput" type="number" min="1" max="1440">
-            <button id="saveSettingsBtn">Save</button>
-            <button id="runCheckNowBtn" class="accent-btn">Run Check Now</button>
-        </div>
-
-        <p class="small">Valid: 1–59 minutes, or multiples of 60 (60, 120, 180...)</p>
-        <p id="cronText" class="cron-display"></p>
-
-        <div class="playlist-row">
-            <div>
-                <p id="playlistStatus" class="small">Playlist not generated yet.</p>
-                <p id="playlistMeta" class="tiny"></p>
+    <div class="container">
+        <header>
+            <div class="header-text">
+                <h1>M3U Stream Checker</h1>
+                <p>Monitor, test and manage all your streams in real time.</p>
             </div>
-            <button id="downloadPlaylistBtn" class="secondary-btn" disabled>Download Current M3U</button>
-        </div>
-    </section>
+            <button id="darkModeBtn" class="theme-toggle btn-outline">
+                <i class="fas fa-moon"></i> Toggle Dark Mode
+            </button>
+        </header>
 
-    <!-- Add Stream -->
-    <section class="create-card">
-        <h2>Add Stream</h2>
-
-        <div class="form">
-            <input id="nameInput" placeholder="Stream Name">
-            <input id="urlInput" placeholder="Stream URL">
-
-            <div class="form-row">
-                <input id="tvgNameInput" placeholder="tvg-name">
-                <input id="tvgIdInput" placeholder="tvg-id">
+        <!-- Settings -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-cog"></i> Checker Settings</h2>
             </div>
 
-            <div class="form-row">
-                <input id="tvgNumberInput" placeholder="tvg-chno" type="number">
-                <input id="tvgLogoInput" placeholder="tvg-logo URL">
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label for="frequencyInput">Check Frequency</label>
+                    <input id="frequencyInput" type="number" min="1" max="1440" placeholder="e.g., 5">
+                    <p class="small mt-1">Valid: 1–59 minutes, or multiples of 60 (60, 120, 180...)</p>
+                </div>
+                <button id="saveSettingsBtn" class="btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button id="runCheckNowBtn" class="btn-accent">
+                    <i class="fas fa-play"></i> Run Check Now
+                </button>
             </div>
 
-            <button id="addStreamBtn">Add Stream</button>
-        </div>
-    </section>
+            <div class="mt-2">
+                <p class="small">Next check:</p>
+                <p id="cronText" class="cron-display">Not scheduled</p>
+            </div>
 
-    <section class="playlist-preview-card">
-        <div class="section-header">
-            <h2>Playlist Preview</h2>
-            <button id="refreshPlaylistPreviewBtn" class="refresh-btn">Refresh</button>
-        </div>
-        <p id="playlistEmptyMessage" class="tiny">Generate the playlist to see the channels.</p>
-        <div id="playlistChannels" class="playlist-grid"></div>
-    </section>
+            <div class="playlist-row flex-between mt-2">
+                <div>
+                    <p id="playlistStatus" class="small">Playlist not generated yet.</p>
+                    <p id="playlistMeta" class="tiny"></p>
+                </div>
+                <button id="downloadPlaylistBtn" class="btn-secondary" disabled>
+                    <i class="fas fa-download"></i> Download Current M3U
+                </button>
+            </div>
+        </section>
 
-    <!-- Import Playlist -->
-    <section class="import-card">
-        <div class="import-header">
-            <h2>Import M3U Playlist</h2>
-            <p class="small">Paste your M3U content to bulk add streams.</p>
-        </div>
-        <textarea id="importTextarea" placeholder="#EXTM3U..." rows="6"></textarea>
-        <div class="import-actions">
-            <button id="importBtn">Import Streams</button>
-            <p id="importStatus" class="tiny"></p>
-        </div>
-        <div id="importSummary" class="import-summary"></div>
-    </section>
+        <!-- Add Stream -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Stream</h2>
+            </div>
 
-    <!-- Streams Table -->
-    <section class="streams-card">
-        <h2>Streams</h2>
-        <button id="refreshBtn" class="refresh-btn">Refresh</button>
+            <div class="form">
+                <div class="form-group">
+                    <input id="nameInput" placeholder="Stream Name" class="mb-1">
+                    <input id="urlInput" placeholder="Stream URL">
+                </div>
 
-        <table id="streamsTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Quality</th>
-                    <th>URL</th>
-                    <th>tvg-name</th>
-                    <th>tvg-id</th>
-                    <th>tvg-chno</th>
-                    <th>tvg-logo</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input id="tvgNameInput" placeholder="tvg-name">
+                    </div>
+                    <div class="form-group">
+                        <input id="tvgIdInput" placeholder="tvg-id">
+                    </div>
+                </div>
 
-    <!-- Live Logs -->
-    <section class="logs-card">
-        <h2>Live Logs</h2>
-        <pre id="logOutput" class="log-box"></pre>
-    </section>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input id="tvgNumberInput" placeholder="tvg-chno" type="number">
+                    </div>
+                    <div class="form-group">
+                        <input id="tvgLogoInput" placeholder="tvg-logo URL">
+                    </div>
+                </div>
 
-</div>
+                <button id="addStreamBtn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Add Stream
+                </button>
+            </div>
+        </section>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="app.js"></script>
+        <!-- Playlist Preview -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-list"></i> Playlist Preview</h2>
+                <button id="refreshPlaylistPreviewBtn" class="btn-outline">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <p id="playlistEmptyMessage" class="tiny">Generate the playlist to see the channels.</p>
+            <div id="playlistChannels" class="playlist-grid mt-2"></div>
+        </section>
+
+        <!-- Import Playlist -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-file-import"></i> Import M3U Playlist</h2>
+            </div>
+            <p class="small mb-2">Paste your M3U content to bulk add streams.</p>
+            <div class="form-group">
+                <textarea id="importTextarea" placeholder="#EXTM3U..." rows="6"></textarea>
+            </div>
+            <div class="import-actions flex-between">
+                <button id="importBtn" class="btn-primary">
+                    <i class="fas fa-upload"></i> Import Streams
+                </button>
+                <p id="importStatus" class="tiny"></p>
+            </div>
+            <div id="importSummary" class="import-summary"></div>
+        </section>
+
+        <!-- Streams Table -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-stream"></i> Streams</h2>
+                <button id="refreshBtn" class="btn-outline">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table id="streamsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Quality</th>
+                            <th>URL</th>
+                            <th>tvg-name</th>
+                            <th>tvg-id</th>
+                            <th>tvg-chno</th>
+                            <th>tvg-logo</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Live Logs -->
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-terminal"></i> Live Logs</h2>
+                <div class="log-controls">
+                    <button id="clearLogsBtn" class="btn-outline btn-icon" title="Clear logs">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button id="pauseLogsBtn" class="btn-outline btn-icon" title="Pause logs">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                </div>
+            </div>
+            <pre id="logOutput" class="log-box"></pre>
+        </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
